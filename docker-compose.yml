@@ -9,6 +9,8 @@ services:
       POSTGRES_DB: ${DB_NAME:-event_week}
       POSTGRES_USER: ${DB_USER:-eventweek}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

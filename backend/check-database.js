@@ -8,9 +8,6 @@ const Activity = require('./src/models/Activity');
 
 const checkDatabase = async () => {
   try {
-    // Set environment to use SQLite
-    process.env.USE_SQLITE = 'true';
-    
     console.log('🔍 Veritabanı içeriği kontrol ediliyor...\n');
     
     // Check users

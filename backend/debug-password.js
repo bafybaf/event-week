@@ -4,9 +4,6 @@ const bcrypt = require('bcryptjs');
 
 const debugPassword = async () => {
   try {
-    // Set environment to use SQLite
-    process.env.USE_SQLITE = 'true';
-    
     console.log('🔍 Şifre debug işlemi başlatılıyor...');
     
     // Find admin user

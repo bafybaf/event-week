@@ -4,9 +4,6 @@ const bcrypt = require('bcryptjs');
 
 const fixAdminPassword = async () => {
   try {
-    // Set environment to use SQLite
-    process.env.USE_SQLITE = 'true';
-    
     console.log('🔧 Admin şifresi düzeltiliyor...');
     
     // Find admin user

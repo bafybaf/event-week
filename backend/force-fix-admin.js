@@ -3,9 +3,6 @@ const bcrypt = require('bcryptjs');
 
 const forceFixAdmin = async () => {
   try {
-    // Set environment to use SQLite
-    process.env.USE_SQLITE = 'true';
-    
     console.log('🔥 Admin kullanıcısını zorla düzeltiyorum...');
     
     // Direct SQL query to update password

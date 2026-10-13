@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Sequelize } = require('sequelize');
 
 const useSqlite = String(process.env.USE_SQLITE || '').toLowerCase() === 'true';
@@ -23,7 +24,7 @@ const sequelize = useSqlite
       process.env.DB_USER || 'eventweek',
       process.env.DB_PASSWORD || '',
       {
-        host: process.env.DB_HOST || 'postgres',
+        host: process.env.DB_HOST || 'localhost',
         port: Number(process.env.DB_PORT || 5432),
         dialect: 'postgres',
         logging: process.env.NODE_ENV === 'development' ? console.log : false,

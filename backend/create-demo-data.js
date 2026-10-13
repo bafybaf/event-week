@@ -19,12 +19,7 @@ const bcrypt = require('bcryptjs');
 
 const createDemoData = async () => {
   try {
-    // Set environment to use SQLite
-    process.env.USE_SQLITE = 'true';
-    process.env.NODE_ENV = 'development';
-    
     console.log('🚀 Demo verileri oluşturuluyor...');
-    console.log('Environment variables:');
     console.log('USE_SQLITE:', process.env.USE_SQLITE);
     console.log('NODE_ENV:', process.env.NODE_ENV);
     

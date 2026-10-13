@@ -12,7 +12,7 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || 'event_week_super_secret_key_
 process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 if (process.env.USE_SQLITE == null || process.env.USE_SQLITE === '') {
-  process.env.USE_SQLITE = process.env.NODE_ENV === 'production' ? 'false' : 'true';
+  process.env.USE_SQLITE = 'false';
 }
 process.env.PORT = process.env.PORT || 3000;
 
