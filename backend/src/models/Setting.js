@@ -75,7 +75,7 @@ const Setting = sequelize.define('Setting', {
     defaultValue: true
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: true,
     references: {
       model: 'events',
@@ -83,7 +83,7 @@ const Setting = sequelize.define('Setting', {
     }
   },
   updatedBy: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: true,
     references: {
       model: 'users',

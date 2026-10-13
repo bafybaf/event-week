@@ -107,7 +107,7 @@ const Flight = sequelize.define('Flight', {
     defaultValue: true
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'events',

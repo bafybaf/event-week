@@ -8,15 +8,14 @@ const router = express.Router();
 
 const ensureProgramPdfColumns = async () => {
   try {
-    const [cols] = await sequelize.query('PRAGMA table_info(programs)');
-    const names = (cols || []).map((c) => c.name);
-    if (!names.includes('pdf_url')) {
+    const desc = await sequelize.getQueryInterface().describeTable('programs');
+    if (!desc.pdf_url) {
       await sequelize.query('ALTER TABLE programs ADD COLUMN pdf_url TEXT');
     }
-    if (!names.includes('file_name')) {
+    if (!desc.file_name) {
       await sequelize.query('ALTER TABLE programs ADD COLUMN file_name TEXT');
     }
-    if (!names.includes('file_size')) {
+    if (!desc.file_size) {
       await sequelize.query('ALTER TABLE programs ADD COLUMN file_size INTEGER');
     }
   } catch (error) {

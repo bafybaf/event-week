@@ -46,7 +46,7 @@ const SurveyResponse = sequelize.define('SurveyResponse', {
     }
   },
   userId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: true,
     references: {
       model: 'users',
@@ -54,7 +54,7 @@ const SurveyResponse = sequelize.define('SurveyResponse', {
     }
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'events',

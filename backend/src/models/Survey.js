@@ -79,7 +79,7 @@ const Survey = sequelize.define('Survey', {
     defaultValue: true
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'events',
@@ -87,7 +87,7 @@ const Survey = sequelize.define('Survey', {
     }
   },
   createdBy: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'users',
@@ -95,7 +95,7 @@ const Survey = sequelize.define('Survey', {
     }
   },
   sessionId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: true,
     references: {
       model: 'programs',

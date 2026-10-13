@@ -86,7 +86,7 @@ const AccommodationBooking = sequelize.define('AccommodationBooking', {
     }
   },
   userId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'users',
@@ -94,7 +94,7 @@ const AccommodationBooking = sequelize.define('AccommodationBooking', {
     }
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'events',

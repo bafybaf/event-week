@@ -84,7 +84,7 @@ const Gallery = sequelize.define('Gallery', {
     defaultValue: true
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'events',
@@ -92,7 +92,7 @@ const Gallery = sequelize.define('Gallery', {
     }
   },
   uploadedBy: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: true,
     references: {
       model: 'users',

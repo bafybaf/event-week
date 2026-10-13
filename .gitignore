@@ -109,6 +109,7 @@ yarn-error.*
 *.db
 *.sqlite
 *.sqlite3
+.pgdata/
 
 # Uploads
 uploads/

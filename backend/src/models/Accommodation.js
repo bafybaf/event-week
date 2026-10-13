@@ -128,7 +128,7 @@ const Accommodation = sequelize.define('Accommodation', {
     defaultValue: true
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'events',

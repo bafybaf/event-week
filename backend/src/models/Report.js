@@ -90,7 +90,7 @@ const Report = sequelize.define('Report', {
     defaultValue: true
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'events',
@@ -98,7 +98,7 @@ const Report = sequelize.define('Report', {
     }
   },
   createdBy: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'users',

@@ -81,7 +81,7 @@ const FlightBooking = sequelize.define('FlightBooking', {
     }
   },
   userId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'users',
@@ -89,7 +89,7 @@ const FlightBooking = sequelize.define('FlightBooking', {
     }
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'events',

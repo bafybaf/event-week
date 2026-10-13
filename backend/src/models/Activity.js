@@ -3,9 +3,9 @@ const { sequelize } = require('../database/connection');
 
 const Activity = sequelize.define('Activity', {
   id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
+    type: DataTypes.STRING,
+    defaultValue: () => require('uuid').v4(),
+    primaryKey: true
   },
   name: {
     type: DataTypes.STRING,
@@ -64,7 +64,7 @@ const Activity = sequelize.define('Activity', {
     defaultValue: false
   },
   eventId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: 'events',
@@ -72,7 +72,7 @@ const Activity = sequelize.define('Activity', {
     }
   },
   organizerId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: true,
     references: {
       model: 'users',
