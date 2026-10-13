@@ -1,0 +1,12 @@
+{
+  "short_name": "EventAdmin",
+  "name": "Event Week Admin Panel",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1E40AF",
+  "background_color": "#ffffff",
+  "icons": []
+}
+
+
+

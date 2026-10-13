@@ -1,0 +1,41 @@
+{
+  "name": "event-week-app",
+  "version": "1.0.0",
+  "description": "EVENT WEEK - Kurumsal Etkinlik Uygulaması",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm run install:mobile && npm run install:backend && npm run install:admin",
+    "install:mobile": "cd mobile-app && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:admin": "cd admin-panel && npm install",
+    "dev:mobile": "cd mobile-app && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:admin": "cd admin-panel && npm start",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:admin\"",
+    "build:mobile": "cd mobile-app && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:admin": "cd admin-panel && npm run build",
+    "test:all": "npm run test:mobile && npm run test:backend && npm run test:admin",
+    "test:mobile": "cd mobile-app && npm test",
+    "test:backend": "cd backend && npm test",
+    "test:admin": "cd admin-panel && npm test",
+    "lint:all": "npm run lint:mobile && npm run lint:backend && npm run lint:admin",
+    "lint:mobile": "cd mobile-app && npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:admin": "cd admin-panel && npm run lint"
+  },
+  "keywords": [
+    "event",
+    "corporate",
+    "mobile",
+    "react-native",
+    "expo",
+    "nodejs",
+    "postgresql"
+  ],
+  "author": "Event Week Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

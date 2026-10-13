@@ -1,0 +1,84 @@
+{
+  "expo": {
+    "name": "Event Week",
+    "slug": "event-week",
+    "owner": "bafybaf06",
+    "version": "1.0.0",
+    "runtimeVersion": "57.0.0",
+    "orientation": "portrait",
+    "scheme": "eventweek",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.eventweek",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE"
+      },
+      "package": "com.yourcompany.eventweek",
+      "versionCode": 1,
+      "usesCleartextTraffic": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "WRITE_EXTERNAL_STORAGE",
+        "NOTIFICATIONS",
+        "POST_NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "web": {
+      "output": "static"
+    },
+    "updates": {
+      "enabled": false,
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Profil fotoğrafınızı seçmek için galeri izni gerekir."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1e40af",
+          "defaultChannel": "event-week",
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
+      "expo-web-browser",
+      "expo-font",
+      "expo-image",
+      "expo-sharing",
+      "expo-splash-screen",
+      "expo-status-bar",
+      "expo-video"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ea43011d-9098-43c4-9247-5532889acd9e"
+      },
+      "apiUrl": "https://api.yourdomain.com/api"
+    }
+  }
+}
