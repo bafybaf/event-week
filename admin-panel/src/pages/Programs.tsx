@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FileText, Plus, Trash2, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventsApi, programsApi } from '../services/api.ts';
-import { API_ORIGIN, fileUrl } from '../config';
+import { API_ORIGIN, fileUrl } from '../config.ts';
 
 interface Event {
   id: number | string;

@@ -16,7 +16,7 @@ import {
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { eventsApi } from '../services/api.ts';
-import { API_ORIGIN, fileUrl } from '../config';
+import { API_ORIGIN, fileUrl } from '../config.ts';
 
 interface Event {
   id: string;

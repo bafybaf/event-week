@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import { MatrixPalette } from '../constants/matrix';
+import { MatrixGreen } from '../constants/matrix';
 
 const GLYPHS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789#$%<>';
 
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nativeChar: {
-    color: MatrixPalette.rain,
+    color: MatrixGreen.rain,
     fontSize: 11,
     lineHeight: 16,
     fontFamily: 'monospace',

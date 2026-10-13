@@ -12,7 +12,7 @@ import { clearSession, hasValidSession, isJwtExpired } from '../src/utils/sessio
 import { EventLogo } from '../components/EventLogo';
 import { MatrixRain } from '../components/MatrixRain';
 import { MatrixText } from '../components/MatrixText';
-import { MatrixPalette } from '../constants/matrix';
+import { MatrixGreen } from '../constants/matrix';
 
 export default function WelcomeScreen() {
   const skipCheckRef = useRef(false);
@@ -179,7 +179,7 @@ export default function WelcomeScreen() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color={MatrixPalette.button} />
+        <ActivityIndicator size="large" color={MatrixGreen.button} />
       </View>
     );
   }
@@ -210,11 +210,13 @@ export default function WelcomeScreen() {
           <View style={styles.heroText}>
             <MatrixText
               text={loginEvent?.name || 'Event Week'}
+              tone="green"
               style={styles.title}
               numberOfLines={2}
             />
             <MatrixText
               text="Kayıtlı telefon numaranız ile giriş yapın"
+              tone="green"
               delayMs={40}
               style={styles.subtitle}
             />
@@ -222,15 +224,15 @@ export default function WelcomeScreen() {
         </View>
 
         <View style={styles.card}>
-          <MatrixText text="Telefon Numarası" delayMs={80} style={styles.phoneLabel} />
+          <MatrixText text="Telefon Numarası" tone="green" delayMs={80} style={styles.phoneLabel} />
           <View style={styles.phoneInput}>
-            <Ionicons name="call" size={20} color={MatrixPalette.text} />
+            <Ionicons name="call" size={20} color={MatrixGreen.text} />
             <TextInput
               style={styles.phoneTextInput}
               value={phoneNumber}
               onChangeText={handlePhoneNumberChange}
               placeholder="5551234567"
-              placeholderTextColor="rgba(125,217,248,0.35)"
+              placeholderTextColor={MatrixGreen.placeholder}
               keyboardType="phone-pad"
               autoFocus
               editable={!submitting}
@@ -244,7 +246,7 @@ export default function WelcomeScreen() {
             disabled={submitting}
           >
             {submitting ? (
-              <ActivityIndicator color={MatrixPalette.buttonText} />
+              <ActivityIndicator color={MatrixGreen.buttonText} />
             ) : (
               <Text style={styles.submitButtonText}>Giriş Yap</Text>
             )}
@@ -258,15 +260,15 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: MatrixPalette.bg,
+    backgroundColor: MatrixGreen.bg,
   },
   centered: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   scrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: MatrixPalette.scrim,
+    ...StyleSheet.absoluteFill,
+    backgroundColor: MatrixGreen.scrim,
   },
   scroll: {
     flex: 1,
@@ -292,7 +294,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: 'rgba(2, 12, 22, 0.72)',
+    backgroundColor: MatrixGreen.hero,
     maxWidth: 520,
   },
   title: {
@@ -310,8 +312,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: MatrixPalette.border,
-    backgroundColor: MatrixPalette.card,
+    borderColor: MatrixGreen.border,
+    backgroundColor: MatrixGreen.card,
   },
   phoneLabel: {
     fontSize: 13,
@@ -323,30 +325,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: MatrixPalette.border,
+    borderColor: MatrixGreen.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     marginBottom: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: MatrixGreen.field,
   },
   phoneTextInput: {
     flex: 1,
     fontSize: 16,
     marginLeft: 8,
-    color: MatrixPalette.input,
+    color: MatrixGreen.input,
     fontFamily: Platform.OS === 'web' ? 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' : 'monospace',
   },
   submitButton: {
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
-    backgroundColor: MatrixPalette.button,
+    backgroundColor: MatrixGreen.button,
   },
   submitButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: MatrixPalette.buttonText,
+    color: MatrixGreen.buttonText,
     textShadowRadius: 0,
   },
 });

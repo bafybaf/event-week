@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, Image, Calendar, Filter, Search, Upload, ChevronDown, ChevronUp, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { galleryApi, eventsApi } from '../services/api.ts';
-import { API_ORIGIN } from '../config';
+import { API_ORIGIN } from '../config.ts';
 
 interface GalleryItem {
   id: number;

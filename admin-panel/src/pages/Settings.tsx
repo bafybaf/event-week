@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, Settings as SettingsIcon, Save, RefreshCw, Bell, Globe, Shield, Database, Image as ImageIcon, Film } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { API_ORIGIN, fileUrl } from '../config';
+import { API_ORIGIN, fileUrl } from '../config.ts';
 
 interface Setting {
   id: number;

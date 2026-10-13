@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, FileText, Download, Calendar, Filter, Search, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { documentsApi, eventsApi } from '../services/api.ts';
-import { API_ORIGIN } from '../config';
+import { API_ORIGIN } from '../config.ts';
 
 interface Document {
   id: number;

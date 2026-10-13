@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { User } from '../types';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL } from '../config.ts';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

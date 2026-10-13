@@ -3,7 +3,7 @@ import { User, Save, Upload, X, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { usersApi } from '../services/api.ts';
-import { API_ORIGIN } from '../config';
+import { API_ORIGIN } from '../config.ts';
 
 const Profile: React.FC = () => {
   const { user: currentUser } = useAuth();

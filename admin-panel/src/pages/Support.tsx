@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MessageSquare, Paperclip, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventsApi, supportApi } from '../services/api.ts';
-import { API_ORIGIN, fileUrl } from '../config';
+import { API_ORIGIN, fileUrl } from '../config.ts';
 
 interface EventItem {
   id: number | string;

@@ -393,30 +393,30 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={[styles.userName, { color: textColor }]}>{displayUser.name}</Text>
-        {displayUser.title && <Text style={[styles.userTitle, { color: textSecondary }]}>{displayUser.title}</Text>}
-        {(displayUser.department || displayUser.company) && (
+        {displayUser.title ? <Text style={[styles.userTitle, { color: textSecondary }]}>{displayUser.title}</Text> : null}
+        {(displayUser.department || displayUser.company) ? (
           <Text style={[styles.userDepartment, { color: textSecondary }]}>
             {displayUser.department}{displayUser.department && displayUser.company ? ' - ' : ''}{displayUser.company}
           </Text>
-        )}
+        ) : null}
       </View>
 
-      {(displayUser.email || displayUser.phone) && (
+      {(displayUser.email || displayUser.phone) ? (
         <View style={[styles.contactInfo, { backgroundColor: cardBackground, borderColor }]}>
-          {displayUser.email && (
+          {displayUser.email ? (
             <View style={styles.contactItem}>
               <Ionicons name="mail" size={20} color={primaryColor} />
               <Text style={[styles.contactText, { color: textSecondary }]}>{displayUser.email}</Text>
             </View>
-          )}
-          {displayUser.phone && (
+          ) : null}
+          {displayUser.phone ? (
             <View style={styles.contactItem}>
               <Ionicons name="call" size={20} color={primaryColor} />
               <Text style={[styles.contactText, { color: textSecondary }]}>{displayUser.phone}</Text>
             </View>
-          )}
+          ) : null}
         </View>
-      )}
+      ) : null}
 
       <View style={[styles.menuSection, { backgroundColor: cardBackground, borderColor }]}>
         {menuItems.map((item, index) => (

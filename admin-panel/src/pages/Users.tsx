@@ -15,7 +15,7 @@ import {
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { usersApi, eventsApi } from '../services/api.ts';
-import { API_ORIGIN } from '../config';
+import { API_ORIGIN } from '../config.ts';
 
 interface User {
   id: string;

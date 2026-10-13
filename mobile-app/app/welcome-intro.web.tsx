@@ -7,6 +7,7 @@ import { fixFileUrl } from '../src/config/apiConfig';
 import { IntroOverlay } from '../components/IntroOverlay';
 import { pickEventLogoUri } from '../components/EventLogo';
 import { loadAppIntroVideo, refreshSelectedEvent, formatPersonName } from '../src/utils/eventStorage';
+import { MatrixGreen } from '../constants/matrix';
 
 const INTRO_FADE_MS = 500;
 
@@ -130,7 +131,7 @@ export default function WelcomeIntroScreen() {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              background: '#020C16',
+              background: MatrixGreen.bg,
             }}
           />
         )}
@@ -149,6 +150,6 @@ export default function WelcomeIntroScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#020C16',
+    backgroundColor: MatrixGreen.bg,
   },
 });

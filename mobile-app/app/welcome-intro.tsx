@@ -8,6 +8,7 @@ import { IntroOverlay } from '../components/IntroOverlay';
 import { pickEventLogoUri } from '../components/EventLogo';
 import { loadAppIntroVideo, refreshSelectedEvent, formatPersonName } from '../src/utils/eventStorage';
 import { INTRO_FADE_MS, useIntroFadeExit } from '../hooks/useIntroFadeExit';
+import { MatrixGreen } from '../constants/matrix';
 
 export default function WelcomeIntroScreen() {
   const { contentOpacity, fadeThenEnter, enterApp, maybeStartEndFade } = useIntroFadeExit();
@@ -71,7 +72,7 @@ export default function WelcomeIntroScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#020C16',
+    backgroundColor: MatrixGreen.bg,
   },
   layer: {
     flex: 1,

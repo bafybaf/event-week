@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { MatrixPalette } from '../constants/matrix';
+import { MatrixGreen } from '../constants/matrix';
 
 const GLYPHS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789#$%<>';
 
@@ -38,13 +38,13 @@ export function MatrixRain() {
       raf = requestAnimationFrame(tick);
       if (time - last < 33) return;
       last = time;
-      ctx.fillStyle = MatrixPalette.rainFade;
+      ctx.fillStyle = MatrixGreen.rainFade;
       ctx.fillRect(0, 0, width, height);
       ctx.font = '13px ui-monospace, Menlo, Consolas, monospace';
       for (let i = 0; i < drops.length; i += 1) {
         const x = i * 16;
         const y = drops[i] * 16;
-        ctx.fillStyle = i % 7 === 0 ? MatrixPalette.rainHead : MatrixPalette.rain;
+        ctx.fillStyle = i % 7 === 0 ? MatrixGreen.rainHead : MatrixGreen.rain;
         ctx.fillText(randomGlyph(), x, y);
         if (y > height && Math.random() > 0.975) drops[i] = 0;
         else drops[i] += 1;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Platform, Text, type StyleProp, type TextStyle } from 'react-native';
-import { MatrixPalette } from '../constants/matrix';
+import { MatrixGreen, MatrixPalette } from '../constants/matrix';
 
 const GLYPHS =
   'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%*+<>';
@@ -19,9 +19,13 @@ type MatrixTextProps = {
   style?: StyleProp<TextStyle>;
   delayMs?: number;
   numberOfLines?: number;
+  tone?: 'cyan' | 'green';
 };
 
-export function MatrixText({ text, style, delayMs = 0, numberOfLines }: MatrixTextProps) {
+export function MatrixText({ text, style, delayMs = 0, numberOfLines, tone = 'cyan' }: MatrixTextProps) {
+  const toneColor = tone === 'green' ? MatrixGreen.text : MatrixPalette.text;
+  const toneGlow = tone === 'green' ? MatrixGreen.glow : MatrixPalette.glow;
+  const toneGlowCss = tone === 'green' ? MatrixGreen.glowCss : MatrixPalette.glowCss;
   const [display, setDisplay] = useState(() => scrambleText(text));
 
   useEffect(() => {
@@ -65,15 +69,15 @@ export function MatrixText({ text, style, delayMs = 0, numberOfLines }: MatrixTe
       numberOfLines={numberOfLines}
       style={[
         {
-          color: MatrixPalette.text,
+          color: toneColor,
           fontFamily: Platform.OS === 'web' ? 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' : 'monospace',
           letterSpacing: 0.8,
           textAlign: 'center',
-          textShadowColor: MatrixPalette.glow,
+          textShadowColor: toneGlow,
           textShadowOffset: { width: 0, height: 0 },
           textShadowRadius: 12,
           ...(Platform.OS === 'web'
-            ? { textShadow: MatrixPalette.glowCss }
+            ? { textShadow: toneGlowCss }
             : {}),
         },
         style,

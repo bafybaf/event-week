@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Heart, MessageCircle, Plus, Trash2, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventsApi, feedApi } from '../services/api.ts';
-import { API_ORIGIN, fileUrl } from '../config';
+import { API_ORIGIN, fileUrl } from '../config.ts';
 
 interface Event {
   id: number | string;
