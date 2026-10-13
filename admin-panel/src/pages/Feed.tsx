@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Heart, MessageCircle, Plus, Trash2, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventsApi, feedApi } from '../services/api.ts';
+import { API_ORIGIN, fileUrl } from '../config';
 
 interface Event {
   id: number | string;
@@ -27,17 +28,7 @@ interface FeedItem {
   };
 }
 
-const getMediaHref = (url?: string) => {
-  if (!url) return '';
-  const uploadsIndex = url.indexOf('/uploads/');
-  if (uploadsIndex !== -1) {
-    return `http://localhost:3000${url.slice(uploadsIndex)}`;
-  }
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url.replace('localhost:3001', 'localhost:3000').replace('127.0.0.1:3001', '127.0.0.1:3000');
-  }
-  return `http://localhost:3000/${url.replace(/^\//, '')}`;
-};
+const getMediaHref = fileUrl;
 
 const Feed: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -125,7 +116,7 @@ const Feed: React.FC = () => {
       const token = localStorage.getItem('token');
       const body = new FormData();
       body.append('media', file);
-      const response = await fetch('http://localhost:3000/api/upload/feed', {
+      const response = await fetch(`${API_ORIGIN}/api/upload/feed`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body

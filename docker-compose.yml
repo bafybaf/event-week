@@ -1,0 +1,78 @@
+# Coolify: Docker Compose resource, bu dosya.
+# Domainleri backend (3000) ve admin (80) servislerine bağlayın.
+# Ortam değişkenleri için coolify.env.example dosyasına bakın.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-event_week}
+      POSTGRES_USER: ${DB_USER:-eventweek}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - eventweek
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      USE_SQLITE: "false"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-event_week}
+      DB_USER: ${DB_USER:-eventweek}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      JWT_SECRET: ${JWT_SECRET:-change-this-jwt-secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      PUBLIC_URL: ${BACKEND_PUBLIC_URL:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@eventweek.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    networks:
+      - eventweek
+
+  admin:
+    build:
+      context: ./admin-panel
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-}
+    restart: unless-stopped
+    environment:
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-}
+    depends_on:
+      - backend
+    expose:
+      - "80"
+    ports:
+      - "3001:80"
+    networks:
+      - eventweek
+
+volumes:
+  postgres_data:
+  backend_uploads:
+
+networks:
+  eventweek:
+    driver: bridge

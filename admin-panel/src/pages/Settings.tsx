@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, Settings as SettingsIcon, Save, RefreshCw, Bell, Globe, Shield, Database, Image as ImageIcon, Film } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_ORIGIN, fileUrl } from '../config';
 
 interface Setting {
   id: number;
@@ -80,22 +81,12 @@ const Settings: React.FC = () => {
     fetchSettings();
   }, [filterEvent]);
 
-  const getLogoHref = (url?: string) => {
-    if (!url) return '';
-    const uploadsIndex = url.indexOf('/uploads/');
-    if (uploadsIndex !== -1) {
-      return `http://localhost:3000${url.slice(uploadsIndex)}`;
-    }
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url.replace('localhost:3001', 'localhost:3000').replace('127.0.0.1:3001', '127.0.0.1:3000');
-    }
-    return `http://localhost:3000/${url.replace(/^\//, '')}`;
-  };
+  const getLogoHref = fileUrl;
 
   const fetchAppLogo = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/settings/app-logo', {
+      const response = await fetch(`${API_ORIGIN}/api/settings/app-logo`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) return;
@@ -108,7 +99,7 @@ const Settings: React.FC = () => {
 
   const saveAppLogo = async (url: string) => {
     const token = localStorage.getItem('token');
-    const response = await fetch('/api/settings/app-logo', {
+    const response = await fetch(`${API_ORIGIN}/api/settings/app-logo`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -135,7 +126,7 @@ const Settings: React.FC = () => {
       const formData = new FormData();
       formData.append('image', file);
       const token = localStorage.getItem('token');
-      const uploadResponse = await fetch('/api/upload/event-logo', {
+      const uploadResponse = await fetch(`${API_ORIGIN}/api/upload/event-logo`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -168,7 +159,7 @@ const Settings: React.FC = () => {
   const fetchIntroVideo = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/settings/app-intro-video', {
+      const response = await fetch(`${API_ORIGIN}/api/settings/app-intro-video`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) return;
@@ -182,7 +173,7 @@ const Settings: React.FC = () => {
 
   const saveIntroVideo = async (url: string, fileName: string) => {
     const token = localStorage.getItem('token');
-    const response = await fetch('/api/settings/app-intro-video', {
+    const response = await fetch(`${API_ORIGIN}/api/settings/app-intro-video`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -210,7 +201,7 @@ const Settings: React.FC = () => {
       const formData = new FormData();
       formData.append('video', file);
       const token = localStorage.getItem('token');
-      const uploadResponse = await fetch('/api/upload/intro-video', {
+      const uploadResponse = await fetch(`${API_ORIGIN}/api/upload/intro-video`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -245,8 +236,8 @@ const Settings: React.FC = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       const url = filterEvent 
-        ? `http://localhost:3000/api/settings?eventId=${filterEvent}`
-        : 'http://localhost:3000/api/settings';
+        ? `${API_ORIGIN}/api/settings?eventId=${filterEvent}`
+        : `${API_ORIGIN}/api/settings`;
       
       const response = await fetch(url, {
         headers: {
@@ -272,7 +263,7 @@ const Settings: React.FC = () => {
   const fetchEvents = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/events', {
+      const response = await fetch(`${API_ORIGIN}/api/events`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -309,7 +300,7 @@ const Settings: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/settings', {
+      const response = await fetch(`${API_ORIGIN}/api/settings`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -341,7 +332,7 @@ const Settings: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/settings/${selectedSetting.id}`, {
+      const response = await fetch(`${API_ORIGIN}/api/settings/${selectedSetting.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -373,7 +364,7 @@ const Settings: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/settings/${selectedSetting.id}`, {
+      const response = await fetch(`${API_ORIGIN}/api/settings/${selectedSetting.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

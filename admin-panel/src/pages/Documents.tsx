@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, FileText, Download, Calendar, Filter, Search, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { documentsApi, eventsApi } from '../services/api.ts';
+import { API_ORIGIN } from '../config';
 
 interface Document {
   id: number;
@@ -134,7 +135,7 @@ const Documents: React.FC = () => {
       formData.append('document', file);
 
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/upload/document', {
+      const response = await fetch(`${API_ORIGIN}/api/upload/document`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

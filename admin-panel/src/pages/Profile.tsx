@@ -3,6 +3,7 @@ import { User, Save, Upload, X, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { usersApi } from '../services/api.ts';
+import { API_ORIGIN } from '../config';
 
 const Profile: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -38,7 +39,7 @@ const Profile: React.FC = () => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          const response = await fetch('http://localhost:3000/api/auth/me', {
+          const response = await fetch(`${API_ORIGIN}/api/auth/me`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
@@ -136,7 +137,7 @@ const Profile: React.FC = () => {
       setChangingPassword(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:3000/api/auth/change-password', {
+      const response = await fetch(`${API_ORIGIN}/api/auth/change-password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -191,7 +192,7 @@ const Profile: React.FC = () => {
       formData.append('image', file);
 
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/upload/profile-image', {
+      const response = await fetch(`${API_ORIGIN}/api/upload/profile-image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -213,7 +214,7 @@ const Profile: React.FC = () => {
           // Veya API'den güncel veriyi çek
           const token = localStorage.getItem('token');
           if (token) {
-            const response = await fetch('http://localhost:3000/api/auth/me', {
+            const response = await fetch(`${API_ORIGIN}/api/auth/me`, {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
@@ -274,7 +275,7 @@ const Profile: React.FC = () => {
         try {
           const token = localStorage.getItem('token');
           if (token) {
-            const refreshResponse = await fetch('http://localhost:3000/api/auth/me', {
+            const refreshResponse = await fetch(`${API_ORIGIN}/api/auth/me`, {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',

@@ -10,9 +10,11 @@ require('dotenv').config();
 // Set default environment variables if not set
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'event_week_super_secret_key_2024_development_only';
 process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
-process.env.USE_SQLITE = process.env.USE_SQLITE || 'true';
-process.env.PORT = process.env.PORT || 3000;
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+if (process.env.USE_SQLITE == null || process.env.USE_SQLITE === '') {
+  process.env.USE_SQLITE = process.env.NODE_ENV === 'production' ? 'false' : 'true';
+}
+process.env.PORT = process.env.PORT || 3000;
 
 const { sequelize } = require('./database/connection');
 const models = require('./models');
@@ -49,6 +51,7 @@ const raffleRoutes = require('./routes/raffle');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.set('trust proxy', 1);
 
 // Rate limiting - COMPLETELY REMOVED
 // Rate limiting middleware has been completely removed
@@ -78,11 +81,17 @@ const corsOptions = {
       }
     }
     // Production modunda sadece belirli origin'lere izin ver
-    const allowedOrigins = ['http://localhost:3001', 'http://localhost:8081', 'http://localhost:8082', 'http://localhost:19006'];
-    if (allowedOrigins.includes(origin)) {
+    const allowedOrigins = [
+      'http://localhost:3001',
+      'http://localhost:8081',
+      'http://localhost:8082',
+      'http://localhost:19006',
+      ...(process.env.CORS_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean)
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true); // Development için tüm isteklere izin ver
+      callback(null, true);
     }
   },
   credentials: true,
@@ -100,13 +109,13 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "http://localhost:3000", "https:", "blob:"],
-      mediaSrc: ["'self'", "data:", "blob:", "http://localhost:3000", "https:"],
+      imgSrc: ["'self'", "data:", "http:", "https:", "blob:"],
+      mediaSrc: ["'self'", "data:", "blob:", "http:", "https:"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       fontSrc: ["'self'", "data:"],
-      connectSrc: ["'self'", "http://localhost:3000"],
-      frameAncestors: ["'self'", "http://localhost:3001", "http://localhost:8081", "http://localhost:8082", "http://localhost:19006"],
+      connectSrc: ["'self'", "http:", "https:"],
+      frameAncestors: ["'self'", "http:", "https:"],
     },
   },
 }));
@@ -238,6 +247,11 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
 
+    if (String(process.env.USE_SQLITE).toLowerCase() !== 'true') {
+      await sequelize.sync();
+      console.log('✅ Postgres tables ready.');
+    }
+
     await models.Event.ensureIntroVideoColumns();
     await models.Setting.ensureAppLogo();
     await models.Setting.ensureAppIntroVideo();
@@ -252,14 +266,26 @@ const startServer = async () => {
     await models.QuizAnswer.sync();
     await models.RaffleDraw.sync();
     console.log('✅ Feed, support, quiz and raffle tables ready.');
+
+    const adminCount = await models.User.count({ where: { role: 'admin' } });
+    if (adminCount === 0) {
+      const email = process.env.ADMIN_EMAIL || 'admin@eventweek.com';
+      const password = process.env.ADMIN_PASSWORD || 'admin123';
+      await models.User.create({
+        email,
+        password,
+        firstName: 'Admin',
+        lastName: 'User',
+        title: 'System Administrator',
+        company: 'Event Week',
+        role: 'admin',
+        qrCode: 'ADMIN-001',
+        isActive: true
+      });
+      console.log('✅ Bootstrap admin created:', email);
+    }
     
-          // Sync database models (temporarily disabled)
-          // if (process.env.NODE_ENV === 'development') {
-          //   await sequelize.sync({ alter: true });
-          //   console.log('✅ Database models synchronized.');
-          // }
-    
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`📱 Environment: ${process.env.NODE_ENV}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);

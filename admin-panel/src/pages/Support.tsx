@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MessageSquare, Paperclip, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventsApi, supportApi } from '../services/api.ts';
+import { API_ORIGIN, fileUrl } from '../config';
 
 interface EventItem {
   id: number | string;
@@ -36,12 +37,7 @@ interface SupportMessage {
   sender?: { firstName?: string; lastName?: string; role?: string };
 }
 
-const getFileHref = (url?: string) => {
-  if (!url) return '';
-  const uploadsIndex = url.indexOf('/uploads/');
-  if (uploadsIndex !== -1) return `http://localhost:3000${url.slice(uploadsIndex)}`;
-  return url.startsWith('http') ? url.replace('localhost:3001', 'localhost:3000') : `http://localhost:3000/${url.replace(/^\//, '')}`;
-};
+const getFileHref = fileUrl;
 
 const personName = (user?: { firstName?: string; lastName?: string }) =>
   `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Kullanıcı';
@@ -94,7 +90,7 @@ const Support: React.FC = () => {
       const token = localStorage.getItem('token');
       const body = new FormData();
       body.append('file', file);
-      const response = await fetch('http://localhost:3000/api/upload/support', {
+      const response = await fetch(`${API_ORIGIN}/api/upload/support`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body

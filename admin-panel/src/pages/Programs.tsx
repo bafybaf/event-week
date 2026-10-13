@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FileText, Plus, Trash2, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventsApi, programsApi } from '../services/api.ts';
+import { API_ORIGIN, fileUrl } from '../config';
 
 interface Event {
   id: number | string;
@@ -67,17 +68,7 @@ const Programs: React.FC = () => {
     return event ? event.name : '';
   };
 
-  const getPdfHref = (pdfUrl?: string) => {
-    if (!pdfUrl) return '';
-    const uploadsIndex = pdfUrl.indexOf('/uploads/');
-    if (uploadsIndex !== -1) {
-      return `http://localhost:3000${pdfUrl.slice(uploadsIndex)}`;
-    }
-    if (pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://')) {
-      return pdfUrl.replace('localhost:3001', 'localhost:3000').replace('127.0.0.1:3001', '127.0.0.1:3000');
-    }
-    return `http://localhost:3000/${pdfUrl.replace(/^\//, '')}`;
-  };
+  const getPdfHref = fileUrl;
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '-';
@@ -112,7 +103,7 @@ const Programs: React.FC = () => {
       const formData = new FormData();
       formData.append('document', file);
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/upload/document', {
+      const response = await fetch(`${API_ORIGIN}/api/upload/document`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData

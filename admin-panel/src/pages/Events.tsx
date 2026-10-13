@@ -16,6 +16,7 @@ import {
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { eventsApi } from '../services/api.ts';
+import { API_ORIGIN, fileUrl } from '../config';
 
 interface Event {
   id: string;
@@ -86,17 +87,7 @@ const Events: React.FC = () => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
 
-  const getVideoHref = (url?: string) => {
-    if (!url) return '';
-    const uploadsIndex = url.indexOf('/uploads/');
-    if (uploadsIndex !== -1) {
-      return `http://localhost:3000${url.slice(uploadsIndex)}`;
-    }
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url.replace('localhost:3001', 'localhost:3000').replace('127.0.0.1:3001', '127.0.0.1:3000');
-    }
-    return `http://localhost:3000/${url.replace(/^\//, '')}`;
-  };
+  const getVideoHref = fileUrl;
 
   const emptyEventForm = (): Partial<Event> => ({
     name: '',
@@ -129,7 +120,7 @@ const Events: React.FC = () => {
       const formData = new FormData();
       formData.append('image', file);
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/upload/event-logo', {
+      const response = await fetch(`${API_ORIGIN}/api/upload/event-logo`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData

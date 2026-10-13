@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, Image, Calendar, Filter, Search, Upload, ChevronDown, ChevronUp, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { galleryApi, eventsApi } from '../services/api.ts';
+import { API_ORIGIN } from '../config';
 
 interface GalleryItem {
   id: number;
@@ -119,7 +120,7 @@ const Gallery: React.FC = () => {
       formData.append('media', file);
 
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/upload/gallery', {
+      const response = await fetch(`${API_ORIGIN}/api/upload/gallery`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -207,7 +208,7 @@ const Gallery: React.FC = () => {
           const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
           try {
-            const response = await fetch('http://localhost:3000/api/upload/gallery', {
+            const response = await fetch(`${API_ORIGIN}/api/upload/gallery`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`

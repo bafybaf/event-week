@@ -163,7 +163,7 @@ class FileUploadService {
         
         // Return local URL (will be served by Express static middleware)
         // Request'ten host bilgisini al, yoksa environment variable veya localhost kullan
-        let baseUrl = process.env.BASE_URL;
+        let baseUrl = process.env.PUBLIC_URL || process.env.BACKEND_PUBLIC_URL || process.env.BASE_URL;
         
         if (!baseUrl && req) {
           // Request header'ından host bilgisini al

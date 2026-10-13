@@ -15,6 +15,7 @@ import {
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { usersApi, eventsApi } from '../services/api.ts';
+import { API_ORIGIN } from '../config';
 
 interface User {
   id: string;
@@ -163,7 +164,7 @@ const Users: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3000/api/users', {
+      const response = await fetch(`${API_ORIGIN}/api/users`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
@@ -188,7 +189,7 @@ const Users: React.FC = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/events', {
+      const response = await fetch(`${API_ORIGIN}/api/events`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
@@ -299,7 +300,7 @@ const Users: React.FC = () => {
     if (!userToDelete) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/users/${userToDelete.id}`, {
+      const response = await fetch(`${API_ORIGIN}/api/users/${userToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -326,7 +327,7 @@ const Users: React.FC = () => {
       const user = users.find(u => u.id === userId);
       if (!user) return;
 
-      const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+      const response = await fetch(`${API_ORIGIN}/api/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -383,7 +384,7 @@ const Users: React.FC = () => {
         delete updateData.password;
       }
 
-      const response = await fetch(`http://localhost:3000/api/users/${selectedUser.id}`, {
+      const response = await fetch(`${API_ORIGIN}/api/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -622,7 +623,7 @@ const Users: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/users', {
+      const response = await fetch(`${API_ORIGIN}/api/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
