@@ -1,6 +1,9 @@
 # Coolify: Docker Compose resource, bu dosya.
 # Domainleri backend (3000) ve admin (80) servislerine bağlayın.
 # Ortam değişkenleri için coolify.env.example dosyasına bakın.
+#
+# Host ports ve özel network Coolify Traefik'i bozar (404).
+# Servisler Coolify'ın kendi ağı üzerinden isimle konuşur (backend, postgres).
 services:
   postgres:
     image: postgres:16-alpine
@@ -9,8 +12,6 @@ services:
       POSTGRES_DB: ${DB_NAME:-event_week}
       POSTGRES_USER: ${DB_USER:-eventweek}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,8 +19,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
-    networks:
-      - eventweek
+    expose:
+      - "5432"
 
   backend:
     build:
@@ -48,10 +49,6 @@ services:
         condition: service_healthy
     expose:
       - "3000"
-    ports:
-      - "3000:3000"
-    networks:
-      - eventweek
 
   admin:
     build:
@@ -66,15 +63,7 @@ services:
       - backend
     expose:
       - "80"
-    ports:
-      - "3001:80"
-    networks:
-      - eventweek
 
 volumes:
   postgres_data:
   backend_uploads:
-
-networks:
-  eventweek:
-    driver: bridge
