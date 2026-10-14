@@ -1,7 +1,21 @@
 const express = require('express');
 const { auth } = require('../middleware/auth');
 const { Announcement, Event, User } = require('../models');
-const { notifyEvent, preview } = require('../services/notify');
+const { notifyEventAndWait, preview } = require('../services/notify');
+
+const announcementPushPayload = (announcement) => ({
+  title: 'Yeni duyuru',
+  body: preview(`${announcement.title}${announcement.content ? `: ${announcement.content}` : ''}`) || announcement.title,
+  data: {
+    type: 'announcement',
+    screen: '/announcements',
+    announcementId: announcement.id,
+  },
+  priority: announcement.priority === 'high' || announcement.priority === 'urgent' ? 'high' : 'default',
+});
+
+const sendAnnouncementPush = (announcement, options = {}) =>
+  notifyEventAndWait(announcement.eventId, announcementPushPayload(announcement), options);
 
 const router = express.Router();
 
@@ -71,6 +85,7 @@ router.get('/', async (req, res) => {
       
       return {
         id: ann.id,
+        eventId: eventId || ann.eventId,
         title: ann.title,
         content: ann.content,
         type: ann.type,
@@ -277,23 +292,17 @@ router.post('/', auth, async (req, res) => {
       event: createdAnnouncement.event || null
     };
 
+    let notifyResult = { sentCount: 0, okCount: 0, errorMessages: [] };
     if (mappedIsPublished) {
-      notifyEvent(eventId, {
-        title: 'Yeni duyuru',
-        body: preview(`${title}${content ? `: ${content}` : ''}`) || title,
-        data: {
-          type: 'announcement',
-          screen: '/announcements',
-          announcementId: announcement.id,
-        },
-        priority: mappedPriority === 'high' || mappedPriority === 'urgent' ? 'high' : 'default',
-      }, { excludeUserId: req.user.id });
+      notifyResult = await sendAnnouncementPush(announcement, { excludeUserId: req.user.id });
     }
 
     res.status(201).json({
       success: true,
       announcement: mappedAnnouncement,
-      message: 'Duyuru başarıyla oluşturuldu'
+      message: 'Duyuru başarıyla oluşturuldu',
+      sentCount: notifyResult.sentCount,
+      okCount: notifyResult.okCount
     });
   } catch (error) {
     console.error('Create announcement error:', error);
@@ -392,23 +401,17 @@ router.put('/:id', auth, async (req, res) => {
       event: updatedAnnouncement.event || null
     };
 
+    let notifyResult = { sentCount: 0, okCount: 0, errorMessages: [] };
     if (updatedAnnouncement.isPublished && !wasPublished) {
-      notifyEvent(updatedAnnouncement.eventId, {
-        title: 'Yeni duyuru',
-        body: preview(`${updatedAnnouncement.title}${updatedAnnouncement.content ? `: ${updatedAnnouncement.content}` : ''}`) || updatedAnnouncement.title,
-        data: {
-          type: 'announcement',
-          screen: '/announcements',
-          announcementId: updatedAnnouncement.id,
-        },
-        priority: updatedAnnouncement.priority === 'high' || updatedAnnouncement.priority === 'urgent' ? 'high' : 'default',
-      }, { excludeUserId: req.user.id });
+      notifyResult = await sendAnnouncementPush(updatedAnnouncement, { excludeUserId: req.user.id });
     }
 
     res.json({
       success: true,
       announcement: mappedAnnouncement,
-      message: 'Duyuru başarıyla güncellendi'
+      message: 'Duyuru başarıyla güncellendi',
+      sentCount: notifyResult.sentCount,
+      okCount: notifyResult.okCount
     });
   } catch (error) {
     console.error('Update announcement error:', error);
@@ -418,6 +421,54 @@ router.put('/:id', auth, async (req, res) => {
       success: false,
       error: error.message || 'Duyuru güncellenirken bir hata oluştu',
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// @route   POST /api/announcements/:id/notify
+// @desc    Send / resend push notification for an announcement
+// @access  Private (Admin/Organizer)
+router.post('/:id/notify', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied. Admin or organizer role required.'
+      });
+    }
+
+    const announcement = await Announcement.findByPk(req.params.id);
+    if (!announcement) {
+      return res.status(404).json({
+        success: false,
+        error: 'Announcement not found'
+      });
+    }
+
+    if (!announcement.isPublished) {
+      announcement.isPublished = true;
+      if (!announcement.publishedAt) {
+        announcement.publishedAt = new Date();
+      }
+      await announcement.save();
+    }
+
+    const notifyResult = await sendAnnouncementPush(announcement, { excludeUserId: req.user.id });
+
+    res.json({
+      success: true,
+      sentCount: notifyResult.sentCount,
+      okCount: notifyResult.okCount,
+      errors: notifyResult.errorMessages,
+      message: notifyResult.okCount > 0
+        ? `Bildirim ${notifyResult.okCount} cihaza gönderildi`
+        : 'Bu etkinlikte bildirim alacak kayıtlı cihaz yok. Katılımcı uygulamayı açıp bildirim iznini vermeli.'
+    });
+  } catch (error) {
+    console.error('Notify announcement error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Bildirim gönderilirken bir hata oluştu'
     });
   }
 });

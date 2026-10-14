@@ -455,7 +455,11 @@ export const announcementsApi = {
   },
   updateAnnouncement: async (id: string, payload: any) => {
     const response = await api.put(`/announcements/${id}`, payload);
-    return response.data.announcement || response.data;
+    return response.data;
+  },
+  notifyAnnouncement: async (id: string) => {
+    const response = await api.post(`/announcements/${id}/notify`);
+    return response.data;
   },
   deleteAnnouncement: async (id: string) => {
     const response = await api.delete(`/announcements/${id}`);

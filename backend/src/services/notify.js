@@ -17,6 +17,25 @@ const fireAndForget = (promise) => {
   });
 };
 
+const summarizeTickets = (tickets) => {
+  const list = Array.isArray(tickets) ? tickets : [];
+  return {
+    sentCount: list.length,
+    okCount: list.filter((ticket) => ticket && ticket.status === 'ok').length,
+    errorMessages: list
+      .filter((ticket) => ticket && ticket.status === 'error' && ticket.message)
+      .map((ticket) => ticket.message),
+  };
+};
+
+const notifyEventAndWait = async (eventId, notification, options = {}) => {
+  if (!eventId) {
+    return { sentCount: 0, okCount: 0, errorMessages: [] };
+  }
+  const tickets = await notificationService.sendEventNotification(eventId, notification, options);
+  return summarizeTickets(tickets);
+};
+
 const notifyEvent = (eventId, notification, options = {}) => {
   if (!eventId) return;
   fireAndForget(notificationService.sendEventNotification(eventId, notification, options));
@@ -38,9 +57,11 @@ const notifyStaff = (eventId, notification, options = {}) => {
 
 module.exports = {
   notifyEvent,
+  notifyEventAndWait,
   notifyUser,
   notifyUsers,
   notifyStaff,
+  summarizeTickets,
   preview,
   stripHtml,
 };

@@ -1,10 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, Send, Calendar, User, Bell, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Send, Calendar, User, Bell, Pin } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { announcementsApi, eventsApi } from '../services/api.ts';
+import { announcementsApi, eventsApi, usersApi } from '../services/api.ts';
+
+const apiError = (error: any, fallback: string) =>
+  error?.response?.data?.error || error?.message || fallback;
+
+const notifyToast = (result: { okCount?: number; sentCount?: number; message?: string } | undefined, published: boolean) => {
+  const okCount = result?.okCount ?? result?.sentCount ?? 0;
+  if (okCount > 0) {
+    toast.success(published
+      ? `Duyuru yayınlandı. Bildirim ${okCount} cihaza gönderildi.`
+      : `Bildirim ${okCount} cihaza gönderildi.`);
+    return;
+  }
+  if (published) {
+    toast.success('Duyuru yayınlandı. Kayıtlı cihaz olmadığı için bildirim gitmedi.');
+    return;
+  }
+  toast.error(result?.message || 'Kayıtlı cihaz olmadığı için bildirim gönderilemedi.');
+};
 
 interface Announcement {
   id: string;
+  eventId?: string;
   title: string;
   content: string;
   type: 'info' | 'warning' | 'success' | 'error';
@@ -40,6 +59,8 @@ const Announcements: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('');
   const [filterEvent, setFilterEvent] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [registeredDeviceCount, setRegisteredDeviceCount] = useState<number | null>(null);
 
   const [newAnnouncement, setNewAnnouncement] = useState<Partial<Announcement>>({
     title: '',
@@ -59,7 +80,10 @@ const Announcements: React.FC = () => {
 
   useEffect(() => {
     fetchAnnouncements();
+    fetchRegisteredDevices();
   }, [filterEvent]);
+
+  const isBusy = (action: string, id: string) => pendingAction === `${action}:${id}`;
 
   const fetchEvents = async () => {
     try {
@@ -67,6 +91,19 @@ const Announcements: React.FC = () => {
       setEvents((data.events || data) || []);
     } catch (error) {
       console.error('Error fetching events:', error);
+    }
+  };
+
+  const fetchRegisteredDevices = async () => {
+    try {
+      const data = await usersApi.getUsers();
+      const list = Array.isArray(data?.users) ? data.users : (Array.isArray(data) ? data : []);
+      const scoped = filterEvent
+        ? list.filter((user: any) => String(user.eventId || '') === String(filterEvent))
+        : list;
+      setRegisteredDeviceCount(scoped.filter((user: any) => Boolean(user.pushToken)).length);
+    } catch (error) {
+      setRegisteredDeviceCount(null);
     }
   };
 
@@ -208,9 +245,10 @@ const Announcements: React.FC = () => {
     setShowAddModal(false);
     toast.success('Duyuru başarıyla eklendi');
       fetchAnnouncements();
+      fetchRegisteredDevices();
     } catch (error: any) {
       console.error('Error adding announcement:', error);
-      toast.error(error.message || 'Duyuru eklenirken hata oluştu');
+      toast.error(apiError(error, 'Duyuru eklenirken hata oluştu'));
     }
   };
 
@@ -227,7 +265,7 @@ const Announcements: React.FC = () => {
     }
 
     try {
-      await announcementsApi.updateAnnouncement(selectedAnnouncement.id, {
+      const result = await announcementsApi.updateAnnouncement(selectedAnnouncement.id, {
         title: newAnnouncement.title,
         content: newAnnouncement.content,
         type: newAnnouncement.type || 'info',
@@ -239,11 +277,15 @@ const Announcements: React.FC = () => {
       });
     setShowEditModal(false);
     setSelectedAnnouncement(null);
-    toast.success('Duyuru başarıyla güncellendi');
+    if (selectedAnnouncement.status !== 'published' && newAnnouncement.status === 'published') {
+      notifyToast(result, true);
+    } else {
+      toast.success('Duyuru başarıyla güncellendi');
+    }
       fetchAnnouncements();
     } catch (error: any) {
       console.error('Error updating announcement:', error);
-      toast.error(error.message || 'Duyuru güncellenirken hata oluştu');
+      toast.error(apiError(error, 'Duyuru güncellenirken hata oluştu'));
     }
   };
 
@@ -267,27 +309,47 @@ const Announcements: React.FC = () => {
     setShowDetailsModal(true);
   };
 
-  const handlePublishAnnouncement = (announcementId: string) => {
-    setAnnouncements(announcements.map(announcement => 
-      announcement.id === announcementId 
-        ? { 
-            ...announcement, 
-            status: 'published' as any, 
-            publishedDate: new Date().toISOString().split('T')[0],
-            updatedAt: new Date().toISOString().split('T')[0]
-          }
-        : announcement
-    ));
-    toast.success('Duyuru yayınlandı');
+  const handlePublishAnnouncement = async (announcementId: string) => {
+    try {
+      setPendingAction(`publish:${announcementId}`);
+      const result = await announcementsApi.updateAnnouncement(announcementId, { status: 'published' });
+      notifyToast(result, true);
+      await fetchAnnouncements();
+    } catch (error: any) {
+      console.error('Error publishing announcement:', error);
+      toast.error(apiError(error, 'Duyuru yayınlanamadı'));
+    } finally {
+      setPendingAction(null);
+    }
   };
 
-  const handleTogglePin = (announcementId: string) => {
-    setAnnouncements(announcements.map(announcement => 
-      announcement.id === announcementId 
-        ? { ...announcement, isPinned: !announcement.isPinned, updatedAt: new Date().toISOString().split('T')[0] }
-        : announcement
-    ));
-    toast.success('Duyuru durumu güncellendi');
+  const handleSendNotification = async (announcementId: string) => {
+    try {
+      setPendingAction(`notify:${announcementId}`);
+      const result = await announcementsApi.notifyAnnouncement(announcementId);
+      notifyToast(result, false);
+      await fetchAnnouncements();
+      await fetchRegisteredDevices();
+    } catch (error: any) {
+      console.error('Error sending announcement notification:', error);
+      toast.error(apiError(error, 'Bildirim gönderilemedi'));
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleTogglePin = async (announcement: Announcement) => {
+    try {
+      setPendingAction(`pin:${announcement.id}`);
+      await announcementsApi.updateAnnouncement(announcement.id, { isPinned: !announcement.isPinned });
+      toast.success(announcement.isPinned ? 'Sabitleme kaldırıldı' : 'Duyuru sabitlendi');
+      await fetchAnnouncements();
+    } catch (error: any) {
+      console.error('Error pinning announcement:', error);
+      toast.error(apiError(error, 'Sabitleme güncellenemedi'));
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   return (
@@ -355,6 +417,13 @@ const Announcements: React.FC = () => {
           </select>
         </div>
       </div>
+
+      {registeredDeviceCount === 0 && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm">
+          Bu {filterEvent ? 'etkinlikte' : 'uygulamada'} bildirim alacak kayıtlı telefon yok.
+          Katılımcı APK’yı açıp giriş yaptıktan sonra bildirim iznini vermeli. Android sürümünde Firebase FCM olmadan token oluşmaz.
+        </div>
+      )}
 
       {/* Duyuru Listesi */}
       <div className="space-y-4">
@@ -460,24 +529,36 @@ const Announcements: React.FC = () => {
                 
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => handleTogglePin(announcement.id)}
+                    onClick={() => handleTogglePin(announcement)}
+                    disabled={Boolean(pendingAction)}
                     className={`p-1 rounded ${
                       announcement.isPinned 
                         ? 'text-blue-500 hover:text-blue-600' 
                         : 'text-gray-400 hover:text-blue-500'
-                    }`}
+                    } disabled:opacity-50`}
                     title={announcement.isPinned ? 'Sabitlemeyi Kaldır' : 'Sabitle'}
                   >
-                    <Bell size={16} className={announcement.isPinned ? 'fill-current' : ''} />
+                    <Pin size={16} className={announcement.isPinned ? 'fill-current' : ''} />
+                  </button>
+
+                  <button
+                    onClick={() => handleSendNotification(announcement.id)}
+                    disabled={Boolean(pendingAction)}
+                    className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 flex items-center gap-1 disabled:opacity-50"
+                    title="Telefona bildirim gönder"
+                  >
+                    <Bell size={12} />
+                    {isBusy('notify', announcement.id) ? 'Gönderiliyor...' : 'Bildirim gönder'}
                   </button>
                   
                   {announcement.status === 'draft' && (
                     <button
                       onClick={() => handlePublishAnnouncement(announcement.id)}
-                      className="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 flex items-center gap-1"
+                      disabled={Boolean(pendingAction)}
+                      className="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 flex items-center gap-1 disabled:opacity-50"
                     >
                       <Send size={12} />
-                      Yayınla
+                      {isBusy('publish', announcement.id) ? 'Yayınlanıyor...' : 'Yayınla'}
                     </button>
                   )}
                 </div>
