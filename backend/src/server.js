@@ -248,8 +248,12 @@ const startServer = async () => {
     console.log('✅ Database connection established successfully.');
 
     if (String(process.env.USE_SQLITE).toLowerCase() !== 'true') {
-      await sequelize.sync();
-      console.log('✅ Postgres tables ready.');
+      try {
+        await sequelize.sync();
+        console.log('✅ Postgres tables ready.');
+      } catch (syncError) {
+        console.warn('⚠️ Sequelize sync skipped:', syncError.message);
+      }
     }
 
     await models.Event.ensureIntroVideoColumns();
