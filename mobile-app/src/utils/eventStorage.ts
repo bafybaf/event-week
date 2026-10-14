@@ -147,7 +147,7 @@ export async function loadWelcomeIntroState(): Promise<{
   return {
     displayName: formatPersonName(user),
     eventName: event?.name || '',
-    logoUrl: event?.appLogo || event?.logo || '',
+    logoUrl: event?.logo || event?.appLogo || '',
     videoUrl,
     theme,
   };

@@ -224,7 +224,7 @@ router.post('/lookup-phone', async (req, res) => {
         ? {
             id: event.id,
             name: event.name,
-            logo: event.logo || null,
+            logo: event.logo || event.appLogo || null,
             appLogo: event.appLogo || event.logo || null,
             introVideoUrl: event.introVideoUrl || null
           }

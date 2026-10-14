@@ -185,7 +185,7 @@ Event.ensureIntroVideoColumns = async function () {
     if (!desc.app_logo) {
       await qi.addColumn('events', 'app_logo', { type: DataTypes.STRING, allowNull: true });
     }
-    await sequelize.query(`UPDATE events SET app_logo = logo WHERE app_logo IS NULL AND logo IS NOT NULL`);
+    await sequelize.query(`UPDATE events SET app_logo = logo WHERE logo IS NOT NULL AND logo != ''`);
 
     try {
       const [rows] = await sequelize.query(

@@ -36,6 +36,10 @@ export function AppTopBar({ rightExtra }: AppTopBarProps) {
           AsyncStorage.getItem('selectedEvent'),
           AsyncStorage.getItem('currentUser'),
         ]);
+        if (!eventRaw || !userRaw) {
+          router.replace('/');
+          return;
+        }
         const cachedEvent = eventRaw ? JSON.parse(eventRaw) : null;
         const user = userRaw ? JSON.parse(userRaw) : null;
         setLogoUri(pickEventLogoUri(cachedEvent));

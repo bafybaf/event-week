@@ -1,8 +1,8 @@
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform, View, StyleSheet } from 'react-native';
-import { useLayoutEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { Fonts } from '../../constants/fonts';
 import { hasValidSession } from '../../src/utils/session';
 
@@ -31,24 +31,28 @@ export default function TabLayout() {
   const bottomPad = insets.bottom > 0 ? insets.bottom : Platform.OS === 'android' ? 48 : 12;
   const tabBarHeight = 52 + bottomPad;
 
-  useLayoutEffect(() => {
-    const checkAuth = async () => {
-      if (hasRedirected.current) {
-        return;
-      }
-
-      if (!(await hasValidSession())) {
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      const checkAuth = async () => {
+        if (await hasValidSession()) {
+          hasRedirected.current = false;
+          return;
+        }
+        if (cancelled || hasRedirected.current) return;
         hasRedirected.current = true;
         try {
           router.replace('/');
         } catch {
           // ignore
         }
-      }
-    };
-
-    checkAuth();
-  }, []);
+      };
+      checkAuth();
+      return () => {
+        cancelled = true;
+      };
+    }, [router])
+  );
 
   return (
     <Tabs

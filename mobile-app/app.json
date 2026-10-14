@@ -26,7 +26,6 @@
       },
       "package": "com.yourcompany.eventweek",
       "versionCode": 1,
-      "usesCleartextTraffic": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
@@ -44,11 +43,19 @@
       "output": "static"
     },
     "updates": {
-      "enabled": false,
+      "enabled": true,
       "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
       "expo-router",
       [
         "expo-image-picker",

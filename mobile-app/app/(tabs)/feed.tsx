@@ -24,14 +24,15 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Header } from '../../components/Header';
 import { AppTopBar } from '../../components/AppTopBar';
 import ImageCropper from '../../components/ImageCropper';
 import { useThemeColor } from '../../hooks/use-theme-color';
 import { API_BASE_URL, fixImageUrl } from '../../src/config/apiConfig';
 import apiService from '../../src/services/apiService';
-import { clearSession, getSessionToken, isAuthError } from '../../src/utils/session';
+import { getSessionToken, isAuthError } from '../../src/utils/session';
+import { logoutAndReset } from '../../src/utils/logout';
 
 type FeedKind = 'post' | 'story';
 type MediaType = 'image' | 'video';
@@ -145,8 +146,7 @@ export default function FeedScreen() {
   const leaveToLogin = async () => {
     if (leavingRef.current) return;
     leavingRef.current = true;
-    await clearSession();
-    router.replace('/');
+    await logoutAndReset();
   };
 
   const fetchFeed = async (scopedEventId?: string) => {

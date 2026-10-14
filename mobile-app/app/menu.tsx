@@ -4,9 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeColor } from '../hooks/use-theme-color';
-import * as Updates from 'expo-updates';
-import Constants from 'expo-constants';
-import notificationService from '../src/services/notificationService';
+import { logoutAndReset } from '../src/utils/logout';
 import { Header } from '../components/Header';
 import { Screen } from '../components/Screen';
 import { Fonts } from '../constants/fonts';
@@ -156,68 +154,16 @@ export default function MenuScreen() {
 
   const performLogout = async () => {
     try {
-      console.log('🚪 Çıkış yapılıyor...');
-      
-      // Önce yönlendirme işaretini set et - sayfa render edilmesin
       hasRedirected.current = true;
       setShouldRedirect(true);
-      
-      // Tüm AsyncStorage verilerini temizle (tamamen çıkış için)
-      await notificationService.unregisterPushToken();
-      await AsyncStorage.clear();
-      console.log('✅ AsyncStorage tamamen temizlendi');
-      
-      // State'leri temizle
       setCurrentEvent(null);
       setCurrentUser(null);
-      
-      // Uygulamayı hiç giriş yapmamış gibi yeniden başlat
-      console.log('🔄 Uygulama yeniden başlatılıyor...');
-      
-      // Web için sayfayı tamamen yenile
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.location.href = '/';
-        return;
-      }
-      
-      // Native için: Uygulamayı yeniden başlat
-      // Production build'de Updates.reloadAsync() kullan
-      // Development'ta (Expo Go) ise navigation kullan
-      // Expo Go'da Updates.isEnabled genellikle false döner ve executionEnvironment === 'storeClient' olur
-      // Sadece standalone (production build) ve Updates.isEnabled true ise reloadAsync kullan
-      const isExpoGo = Constants.executionEnvironment === 'storeClient';
-      const canUseUpdates = !isExpoGo && Updates.isEnabled && Constants.executionEnvironment === 'standalone';
-      
-      if (canUseUpdates) {
-        try {
-          console.log('🔄 Production build - Updates.reloadAsync() çağrılıyor...');
-          // Updates.reloadAsync() parametre almaz
-          await Updates.reloadAsync();
-        } catch (error) {
-          console.error('Updates.reloadAsync() hatası:', error);
-          // Hata durumunda navigation kullan
-          routerHook.replace('/');
-        }
-      } else {
-        // Development (Expo Go) veya updates disabled için: Navigation ile root'a git
-        console.log('🔄 Development/Expo Go - Navigation ile root\'a gidiliyor...');
-        try {
-          // Tüm navigation stack'ini temizle ve root'a git
-          routerHook.replace('/');
-          // Kısa bir gecikme ile tekrar replace yap (stack'i tamamen temizle)
-          setTimeout(() => {
-            routerHook.replace('/');
-            console.log('✅ Navigasyon tamamlandı');
-          }, 100);
-        } catch (error) {
-          console.error('Navigation error:', error);
-        }
-      }
+      await logoutAndReset();
     } catch (error) {
       console.error('❌ Logout error:', error);
       Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu');
       hasRedirected.current = false;
-      setShouldRedirect(false); // Hata durumunda redirect'i iptal et
+      setShouldRedirect(false);
     }
   };
 

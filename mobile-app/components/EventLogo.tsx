@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { fixImageUrl } from '../src/config/apiConfig';
@@ -17,12 +17,16 @@ export function pickEventLogoUri(event?: {
   logo?: string | null;
   appLogo?: string | null;
 } | null) {
-  return event?.appLogo || event?.logo || null;
+  return event?.logo || event?.appLogo || null;
 }
 
 export function EventLogo({ uri, size = 36, width, height }: EventLogoProps) {
   const src = fixImageUrl(uri || '');
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
   const boxW = width ?? size;
   const boxH = height ?? size;
 

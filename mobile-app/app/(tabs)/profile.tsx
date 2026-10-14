@@ -9,9 +9,7 @@ import { useThemeColor } from '../../hooks/use-theme-color';
 import { apiService } from '../../src/services/apiService';
 import { pickProfileImage } from '../../src/config/apiConfig';
 import { pickProfilePhoto, uploadProfilePhoto } from '../../src/utils/profileImageUpload';
-import * as Updates from 'expo-updates';
-import Constants from 'expo-constants';
-import notificationService from '../../src/services/notificationService';
+import { logoutAndReset } from '../../src/utils/logout';
 
 export default function ProfileScreen() {
   const [userData, setUserData] = useState<any>(null);
@@ -214,14 +212,6 @@ export default function ProfileScreen() {
 
   const performLogout = async () => {
     try {
-      console.log('🚪 Çıkış yapılıyor...');
-      
-      // Tüm AsyncStorage verilerini temizle (tamamen çıkış için)
-      await notificationService.unregisterPushToken();
-      await AsyncStorage.clear();
-      console.log('✅ AsyncStorage tamamen temizlendi');
-      
-      // State'leri temizle
       setUserData(null);
       setStats({
         sessions: 0,
@@ -229,49 +219,7 @@ export default function ProfileScreen() {
         votes: 0,
         activities: 0,
       });
-      
-      // Uygulamayı hiç giriş yapmamış gibi yeniden başlat
-      console.log('🔄 Uygulama yeniden başlatılıyor...');
-      
-      // Web için sayfayı tamamen yenile
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.location.href = '/';
-        return;
-      }
-      
-      // Native için: Uygulamayı yeniden başlat
-      // Production build'de Updates.reloadAsync() kullan
-      // Development'ta (Expo Go) ise navigation kullan
-      // Expo Go'da Updates.isEnabled genellikle false döner ve executionEnvironment === 'storeClient' olur
-      // Sadece standalone (production build) ve Updates.isEnabled true ise reloadAsync kullan
-      const isExpoGo = Constants.executionEnvironment === 'storeClient';
-      const canUseUpdates = !isExpoGo && Updates.isEnabled && Constants.executionEnvironment === 'standalone';
-      
-      if (canUseUpdates) {
-        try {
-          console.log('🔄 Production build - Updates.reloadAsync() çağrılıyor...');
-          // Updates.reloadAsync() parametre almaz
-          await Updates.reloadAsync();
-        } catch (error) {
-          console.error('Updates.reloadAsync() hatası:', error);
-          // Hata durumunda navigation kullan
-          router.replace('/');
-        }
-      } else {
-        // Development (Expo Go) veya updates disabled için: Navigation ile root'a git
-        console.log('🔄 Development/Expo Go - Navigation ile root\'a gidiliyor...');
-        try {
-          // Tüm navigation stack'ini temizle ve root'a git
-          router.replace('/');
-          // Kısa bir gecikme ile tekrar replace yap (stack'i tamamen temizle)
-          setTimeout(() => {
-            router.replace('/');
-            console.log('✅ Navigasyon tamamlandı');
-          }, 100);
-        } catch (error) {
-          console.error('Navigation error:', error);
-        }
-      }
+      await logoutAndReset();
     } catch (error) {
       console.error('❌ Logout error:', error);
       Alert.alert('Hata', 'Çıkış yapılırken bir hata oluştu');
