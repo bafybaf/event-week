@@ -1,32 +1,37 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
-import { MatrixGreen } from '../constants/matrix';
+import { MatrixGreen, getMatrixPalette, matrixGlyphsForEvent, type IntroTheme } from '../constants/matrix';
 
-const GLYPHS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789#$%<>';
+type MatrixRainProps = {
+  theme?: IntroTheme;
+  eventName?: string;
+};
 
-function randomGlyph() {
-  return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+function randomGlyph(glyphs: string) {
+  return glyphs[Math.floor(Math.random() * glyphs.length)];
 }
 
-export function MatrixRain() {
+export function MatrixRain({ theme = 'filli', eventName }: MatrixRainProps) {
+  const palette = getMatrixPalette(theme);
+  const glyphs = useMemo(() => matrixGlyphsForEvent(eventName), [eventName]);
   const { width, height } = Dimensions.get('window');
   const columns = useMemo(() => Math.min(18, Math.max(10, Math.floor(width / 22))), [width]);
   const rows = useMemo(() => Math.max(12, Math.floor(height / 22)), [height]);
   const [grid, setGrid] = useState(() =>
-    Array.from({ length: columns }, () => Array.from({ length: rows }, randomGlyph))
+    Array.from({ length: columns }, () => Array.from({ length: rows }, () => randomGlyph(glyphs)))
   );
 
   useEffect(() => {
     const id = setInterval(() => {
       setGrid((prev) =>
         prev.map((col) => {
-          const next = [randomGlyph(), ...col.slice(0, -1)];
+          const next = [randomGlyph(glyphs), ...col.slice(0, -1)];
           return Math.random() > 0.35 ? next : col;
         })
       );
     }, 140);
     return () => clearInterval(id);
-  }, []);
+  }, [glyphs]);
 
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.nativeWrap]}>
@@ -37,7 +42,10 @@ export function MatrixRain() {
               key={`${x}-${y}`}
               style={[
                 styles.nativeChar,
-                { opacity: y === 0 ? 0.95 : Math.max(0.12, 0.72 - y * 0.04) },
+                {
+                  color: y === 0 ? palette.rainHead : palette.rain,
+                  opacity: y === 0 ? 0.95 : Math.max(0.12, 0.72 - y * 0.04),
+                },
               ]}
             >
               {char}
@@ -54,7 +62,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     overflow: 'hidden',
-    opacity: 0.18,
+    opacity: 0.22,
   },
   column: {
     alignItems: 'center',

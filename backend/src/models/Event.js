@@ -186,6 +186,21 @@ Event.ensureIntroVideoColumns = async function () {
       await qi.addColumn('events', 'app_logo', { type: DataTypes.STRING, allowNull: true });
     }
     await sequelize.query(`UPDATE events SET app_logo = logo WHERE app_logo IS NULL AND logo IS NOT NULL`);
+
+    try {
+      const [rows] = await sequelize.query(
+        `SELECT value FROM settings WHERE key = 'app_intro_video' AND value IS NOT NULL AND value != '' LIMIT 1`
+      );
+      const url = rows && rows[0] && rows[0].value;
+      if (url) {
+        await sequelize.query(
+          `UPDATE events SET intro_video_url = :url WHERE (intro_video_url IS NULL OR intro_video_url = '') AND LOWER(name) LIKE '%filli%'`,
+          { replacements: { url } }
+        );
+      }
+    } catch (seedError) {
+      console.warn('Filli intro video seed:', seedError.message);
+    }
   } catch (error) {
     console.warn('Intro video columns ensure:', error.message);
   }

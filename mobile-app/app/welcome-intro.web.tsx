@@ -2,14 +2,14 @@ import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'r
 import { View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fixFileUrl } from '../src/config/apiConfig';
 import { IntroOverlay } from '../components/IntroOverlay';
-import { pickEventLogoUri } from '../components/EventLogo';
-import { loadAppIntroVideo, refreshSelectedEvent, formatPersonName } from '../src/utils/eventStorage';
-import { MatrixGreen } from '../constants/matrix';
+import { MatrixRain } from '../components/MatrixRain';
+import { loadWelcomeIntroState } from '../src/utils/eventStorage';
+import { getMatrixPalette, type IntroTheme } from '../constants/matrix';
 
 const INTRO_FADE_MS = 500;
+const MATRIX_WELCOME_MS = 4500;
 
 export default function WelcomeIntroScreen() {
   const entered = useRef(false);
@@ -20,9 +20,12 @@ export default function WelcomeIntroScreen() {
   const [displayName, setDisplayName] = useState('Katılımcı');
   const [eventName, setEventName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [theme, setTheme] = useState<IntroTheme>('brand');
   const [progress, setProgress] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
   const [fadeMs, setFadeMs] = useState(INTRO_FADE_MS);
+  const [ready, setReady] = useState(false);
+  const palette = getMatrixPalette(theme);
 
   const enterApp = useCallback(() => {
     if (entered.current) return;
@@ -62,26 +65,37 @@ export default function WelcomeIntroScreen() {
 
   useEffect(() => {
     const load = async () => {
-      const eventRaw = await AsyncStorage.getItem('selectedEvent');
-      const userRaw = await AsyncStorage.getItem('currentUser');
-      const cachedEvent = eventRaw ? JSON.parse(eventRaw) : null;
-      const event = (await refreshSelectedEvent()) || cachedEvent;
-      const user = userRaw ? JSON.parse(userRaw) : null;
-      setDisplayName(formatPersonName(user));
-      setEventName(event?.name || '');
-      setLogoUrl(fixFileUrl(pickEventLogoUri(event) || '') || '');
-      const url = fixFileUrl((await loadAppIntroVideo()) || '') || '';
-      if (!url) {
-        enterApp();
-        return;
-      }
-      setVideoUrl(url);
+      const state = await loadWelcomeIntroState();
+      setDisplayName(state.displayName);
+      setEventName(state.eventName);
+      setLogoUrl(fixFileUrl(state.logoUrl) || '');
+      setVideoUrl(fixFileUrl(state.videoUrl) || '');
+      setTheme(state.theme);
+      setReady(true);
     };
     load();
-  }, [enterApp]);
+  }, []);
+
+  useEffect(() => {
+    if (!ready || videoUrl) return;
+    const started = Date.now();
+    const tick = setInterval(() => {
+      const ratio = Math.min(1, (Date.now() - started) / MATRIX_WELCOME_MS);
+      setProgress(ratio);
+      if (ratio >= 1) {
+        clearInterval(tick);
+        fadeThenEnter(INTRO_FADE_MS);
+      }
+    }, 80);
+    return () => clearInterval(tick);
+  }, [ready, videoUrl, fadeThenEnter]);
+
+  if (!ready) {
+    return <View style={[styles.container, { backgroundColor: palette.bg }]} />;
+  }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: palette.bg }]}>
       <StatusBar style="light" />
       <div
         id="intro-fade-layer"
@@ -93,6 +107,7 @@ export default function WelcomeIntroScreen() {
           transition: `opacity ${fadeMs}ms ease-out`,
         }}
       >
+        {!videoUrl && <MatrixRain theme={theme} eventName={eventName} />}
         {!!videoUrl && (
           <video
             src={videoUrl}
@@ -131,7 +146,7 @@ export default function WelcomeIntroScreen() {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              background: MatrixGreen.bg,
+              background: palette.bg,
             }}
           />
         )}
@@ -140,6 +155,7 @@ export default function WelcomeIntroScreen() {
           eventName={eventName}
           logoUrl={logoUrl}
           progress={progress}
+          theme={theme}
           onSkip={() => fadeThenEnter(360)}
         />
       </div>
@@ -150,6 +166,5 @@ export default function WelcomeIntroScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: MatrixGreen.bg,
   },
 });

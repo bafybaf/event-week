@@ -11,7 +11,8 @@ import {
   MapPin,
   Clock,
   Users,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Film
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -36,6 +37,8 @@ interface Event {
   organizerId: string;
   coverImage?: string;
   logo?: string;
+  introVideoUrl?: string;
+  introVideoFileName?: string;
   website?: string;
   contactEmail?: string;
   contactPhone?: string;
@@ -83,8 +86,11 @@ const Events: React.FC = () => {
     contactEmail: '',
     contactPhone: '',
     logo: '',
+    introVideoUrl: '',
+    introVideoFileName: '',
   });
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingIntroVideo, setUploadingIntroVideo] = useState(false);
 
 
   const getVideoHref = fileUrl;
@@ -106,6 +112,8 @@ const Events: React.FC = () => {
     contactEmail: '',
     contactPhone: '',
     logo: '',
+    introVideoUrl: '',
+    introVideoFileName: '',
   });
 
   const handleLogoUpload = async (file?: File) => {
@@ -172,6 +180,74 @@ const Events: React.FC = () => {
             className="hidden"
             disabled={uploadingLogo}
             onChange={(e) => handleLogoUpload(e.target.files?.[0])}
+          />
+        </label>
+      )}
+    </div>
+  );
+
+  const handleIntroVideoUpload = async (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+      toast.error('Sadece video yükleyebilirsiniz (MP4, WebM, MOV)');
+      return;
+    }
+
+    try {
+      setUploadingIntroVideo(true);
+      const formData = new FormData();
+      formData.append('video', file);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ORIGIN}/api/upload/intro-video`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Video yüklenemedi');
+      }
+      setNewEvent((prev) => ({
+        ...prev,
+        introVideoUrl: result.data.url,
+        introVideoFileName: result.data.fileName || file.name
+      }));
+      toast.success('Hoş geldiniz videosu yüklendi');
+    } catch (error: any) {
+      toast.error(error.message || 'Video yüklenirken hata oluştu');
+    } finally {
+      setUploadingIntroVideo(false);
+    }
+  };
+
+  const renderIntroVideoField = () => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Hoş geldiniz videosu</label>
+      <p className="text-xs text-gray-500 mb-2">Katılımcı girdikten sonra bu etkinliğe özel oynatılır. Boşsa Matrix açılış gösterilir.</p>
+      {newEvent.introVideoUrl ? (
+        <div className="space-y-2">
+          <video src={getVideoHref(newEvent.introVideoUrl)} controls className="w-full max-h-48 rounded-md bg-black" />
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span className="truncate pr-3">{newEvent.introVideoFileName || 'video'}</span>
+            <button
+              type="button"
+              className="text-red-600 hover:text-red-800 shrink-0"
+              onClick={() => setNewEvent({ ...newEvent, introVideoUrl: '', introVideoFileName: '' })}
+            >
+              Kaldır
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-md p-4 cursor-pointer text-sm text-gray-600 hover:bg-gray-50">
+          <Film className="h-4 w-4" />
+          {uploadingIntroVideo ? 'Yükleniyor...' : 'Video seçin (MP4, WebM, MOV)'}
+          <input
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime"
+            className="hidden"
+            disabled={uploadingIntroVideo}
+            onChange={(e) => handleIntroVideoUpload(e.target.files?.[0])}
           />
         </label>
       )}
@@ -530,6 +606,8 @@ const Events: React.FC = () => {
       contactEmail: event.contactEmail,
       contactPhone: event.contactPhone,
       logo: event.logo || '',
+      introVideoUrl: event.introVideoUrl || (event as any).intro_video_url || '',
+      introVideoFileName: event.introVideoFileName || (event as any).intro_video_file_name || '',
     });
     setShowEditModal(true);
   };
@@ -558,6 +636,8 @@ const Events: React.FC = () => {
         contactEmail: newEvent.contactEmail || '',
         contactPhone: newEvent.contactPhone || '',
         logo: newEvent.logo || '',
+        introVideoUrl: newEvent.introVideoUrl || '',
+        introVideoFileName: newEvent.introVideoFileName || '',
       };
       const created = await eventsApi.createEvent(payload);
       setEvents([...events, created]);
@@ -593,6 +673,8 @@ const Events: React.FC = () => {
         contactEmail: newEvent.contactEmail || '',
         contactPhone: newEvent.contactPhone || '',
         logo: newEvent.logo || '',
+        introVideoUrl: newEvent.introVideoUrl || '',
+        introVideoFileName: newEvent.introVideoFileName || '',
       };
       const updated = await eventsApi.updateEvent(selectedEvent.id, payload);
       setEvents(events.map(e => e.id === selectedEvent.id ? updated : e));
@@ -1085,6 +1167,7 @@ const Events: React.FC = () => {
                   </div>
                 </div>
                 {renderLogoUploadField()}
+                {renderIntroVideoField()}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                   <input 
@@ -1291,6 +1374,7 @@ const Events: React.FC = () => {
                   </div>
                 </div>
                 {renderLogoUploadField()}
+                {renderIntroVideoField()}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                   <input 

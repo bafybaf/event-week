@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiService from '../services/apiService';
+import { getIntroTheme, isFilliBoyaEvent, type IntroTheme } from '../../constants/matrix';
 
 function toDateOnly(value: any): string {
   if (value == null || value === '') return '';
@@ -122,4 +123,32 @@ export async function loadAppIntroVideo() {
   } catch {
     return null;
   }
+}
+
+export async function loadWelcomeIntroState(): Promise<{
+  displayName: string;
+  eventName: string;
+  logoUrl: string;
+  videoUrl: string;
+  theme: IntroTheme;
+}> {
+  const eventRaw = await AsyncStorage.getItem('selectedEvent');
+  const userRaw = await AsyncStorage.getItem('currentUser');
+  const cachedEvent = eventRaw ? JSON.parse(eventRaw) : null;
+  const event = (await refreshSelectedEvent()) || cachedEvent;
+  const user = userRaw ? JSON.parse(userRaw) : null;
+  const theme = getIntroTheme(event);
+  const eventVideo = event?.introVideoUrl || event?.intro_video_url || '';
+  let videoUrl = eventVideo;
+  if (!videoUrl && isFilliBoyaEvent(event)) {
+    videoUrl = (await loadAppIntroVideo()) || '';
+  }
+
+  return {
+    displayName: formatPersonName(user),
+    eventName: event?.name || '',
+    logoUrl: event?.appLogo || event?.logo || '',
+    videoUrl,
+    theme,
+  };
 }

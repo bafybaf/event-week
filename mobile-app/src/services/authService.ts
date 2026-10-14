@@ -151,6 +151,24 @@ export const authService = {
     }
   },
 
+  async lookupPhoneEvent(phoneNumber: string) {
+    try {
+      const response = await api.post('/users/lookup-phone', { phoneNumber });
+      if (response.data && Object.prototype.hasOwnProperty.call(response.data, 'event')) {
+        return response.data.event || null;
+      }
+    } catch {
+      // Yeni uç henüz yayında değilse mevcut doğrulamayı sadece önizleme için kullan.
+    }
+
+    try {
+      const response = await api.post('/users/validate-phone', { phoneNumber });
+      return response.data?.event || null;
+    } catch {
+      return null;
+    }
+  },
+
   // Validate user by phone number (event is resolved from the user record)
   async validatePhoneUser(phoneNumber: string, eventId?: string) {
     try {

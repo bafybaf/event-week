@@ -7,21 +7,23 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../src/services/authService';
 import notificationService from '../src/services/notificationService';
-import { mapEventFromApi, mapUserFromApi, loadLoginEvent, loadAppLogo, loadAppIntroVideo } from '../src/utils/eventStorage';
+import { mapEventFromApi, mapUserFromApi, loadAppLogo } from '../src/utils/eventStorage';
 import { clearSession, hasValidSession, isJwtExpired } from '../src/utils/session';
-import { EventLogo } from '../components/EventLogo';
-import { MatrixRain } from '../components/MatrixRain';
-import { MatrixText } from '../components/MatrixText';
-import { MatrixGreen } from '../constants/matrix';
+import { EventLogo, pickEventLogoUri } from '../components/EventLogo';
+import { useTheme } from '../contexts/ThemeContext';
+import { Colors } from '../constants/Colors';
+import { Fonts } from '../constants/fonts';
 
 export default function WelcomeScreen() {
   const skipCheckRef = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [loginEvent, setLoginEvent] = useState<any>(null);
+  const [matchedEvent, setMatchedEvent] = useState<any>(null);
   const [appLogo, setAppLogo] = useState<string | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
@@ -47,9 +49,9 @@ export default function WelcomeScreen() {
         if (loggedIn) return;
 
         setPhoneNumber('');
+        setMatchedEvent(null);
         skipCheckRef.current = true;
         setLoading(false);
-        loadLoginEvent().then(setLoginEvent);
         loadAppLogo().then(setAppLogo);
       };
 
@@ -73,12 +75,32 @@ export default function WelcomeScreen() {
   };
 
   useEffect(() => {
+    const digits = phoneNumber.replace(/\D/g, '');
+    if (digits.length < 10) {
+      setMatchedEvent(null);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const event = await authService.lookupPhoneEvent(digits);
+      if (!cancelled) {
+        setMatchedEvent(mapEventFromApi(event));
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [phoneNumber]);
+
+  useEffect(() => {
     const initializeScreen = async () => {
       const loggedIn = await redirectIfLoggedIn();
       if (loggedIn) return;
       skipCheckRef.current = true;
       setLoading(false);
-      loadLoginEvent().then(setLoginEvent);
       loadAppLogo().then(setAppLogo);
     };
 
@@ -151,12 +173,7 @@ export default function WelcomeScreen() {
       notificationService.registerPushToken().catch(() => {});
 
       setPhoneNumber('');
-      const introVideoUrl = await loadAppIntroVideo();
-      if (introVideoUrl) {
-        router.replace('/welcome-intro' as any);
-      } else {
-        router.replace('/(tabs)');
-      }
+      router.replace('/welcome-intro' as any);
     } catch (error: any) {
       const errorMessage = error.message || error.response?.data?.error || 'Giriş yapılırken bir hata oluştu.';
 
@@ -176,26 +193,27 @@ export default function WelcomeScreen() {
     }
   };
 
+  const displayLogo = pickEventLogoUri(matchedEvent) || appLogo;
+  const displayName = matchedEvent?.name || '';
+
   if (loading) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color={MatrixGreen.button} />
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-      <MatrixRain />
-      <View style={styles.scrim} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       <ScrollView
         ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: Math.max(insets.top, 12) + 8,
+            paddingTop: Math.max(insets.top, 12) + 24,
             paddingBottom: Math.max(insets.bottom, 16) + keyboardHeight + 12,
           },
         ]}
@@ -205,34 +223,28 @@ export default function WelcomeScreen() {
       >
         <View style={styles.hero}>
           <View style={styles.logoWrap}>
-            <EventLogo uri={appLogo} width={220} height={88} />
+            <EventLogo uri={displayLogo} width={220} height={88} />
           </View>
-          <View style={styles.heroText}>
-            <MatrixText
-              text={loginEvent?.name || 'Event Week'}
-              tone="green"
-              style={styles.title}
-              numberOfLines={2}
-            />
-            <MatrixText
-              text="Kayıtlı telefon numaranız ile giriş yapın"
-              tone="green"
-              delayMs={40}
-              style={styles.subtitle}
-            />
-          </View>
+          {displayName ? (
+            <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+              {displayName}
+            </Text>
+          ) : null}
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Kayıtlı telefon numaranız ile giriş yapın
+          </Text>
         </View>
 
-        <View style={styles.card}>
-          <MatrixText text="Telefon Numarası" tone="green" delayMs={80} style={styles.phoneLabel} />
-          <View style={styles.phoneInput}>
-            <Ionicons name="call" size={20} color={MatrixGreen.text} />
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.phoneLabel, { color: colors.textSecondary }]}>Telefon Numarası</Text>
+          <View style={[styles.phoneInput, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}>
+            <Ionicons name="call" size={20} color={colors.primary} />
             <TextInput
-              style={styles.phoneTextInput}
+              style={[styles.phoneTextInput, { color: colors.text }]}
               value={phoneNumber}
               onChangeText={handlePhoneNumberChange}
               placeholder="5551234567"
-              placeholderTextColor={MatrixGreen.placeholder}
+              placeholderTextColor={colors.textMuted}
               keyboardType="phone-pad"
               autoFocus
               editable={!submitting}
@@ -241,12 +253,12 @@ export default function WelcomeScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.submitButton, { opacity: submitting ? 0.7 : 1 }]}
+            style={[styles.submitButton, { backgroundColor: colors.primary, opacity: submitting ? 0.7 : 1 }]}
             onPress={handlePhoneLogin}
             disabled={submitting}
           >
             {submitting ? (
-              <ActivityIndicator color={MatrixGreen.buttonText} />
+              <ActivityIndicator color="#042033" />
             ) : (
               <Text style={styles.submitButtonText}>Giriş Yap</Text>
             )}
@@ -260,19 +272,13 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: MatrixGreen.bg,
   },
   centered: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scrim: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: MatrixGreen.scrim,
-  },
   scroll: {
     flex: 1,
-    zIndex: 1,
   },
   content: {
     flexGrow: 1,
@@ -281,74 +287,62 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 28,
   },
   logoWrap: {
-    marginBottom: 10,
+    marginBottom: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
-  },
-  heroText: {
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: MatrixGreen.hero,
-    maxWidth: 520,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
+    fontFamily: Fonts.bold,
     fontWeight: '700',
-    marginBottom: 6,
+    marginBottom: 8,
+    textAlign: 'center',
     paddingHorizontal: 12,
   },
   subtitle: {
-    fontSize: 12,
-    opacity: 0.9,
+    fontSize: 14,
+    fontFamily: Fonts.regular,
+    textAlign: 'center',
     paddingHorizontal: 16,
   },
   card: {
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: MatrixGreen.border,
-    backgroundColor: MatrixGreen.card,
   },
   phoneLabel: {
     fontSize: 13,
+    fontFamily: Fonts.medium,
     fontWeight: '500',
     marginBottom: 10,
-    textAlign: 'left',
   },
   phoneInput: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: MatrixGreen.border,
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 12,
     marginBottom: 20,
-    backgroundColor: MatrixGreen.field,
   },
   phoneTextInput: {
     flex: 1,
     fontSize: 16,
     marginLeft: 8,
-    color: MatrixGreen.input,
-    fontFamily: Platform.OS === 'web' ? 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' : 'monospace',
+    fontFamily: Fonts.medium,
   },
   submitButton: {
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: MatrixGreen.button,
   },
   submitButtonText: {
     fontSize: 16,
+    fontFamily: Fonts.bold,
     fontWeight: '700',
-    color: MatrixGreen.buttonText,
-    textShadowRadius: 0,
+    color: '#042033',
   },
 });

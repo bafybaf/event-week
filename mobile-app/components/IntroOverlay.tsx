@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventLogo } from './EventLogo';
 import { MatrixText } from './MatrixText';
-import { MatrixGreen } from '../constants/matrix';
+import { getMatrixPalette, type IntroTheme } from '../constants/matrix';
 import { Fonts } from '../constants/fonts';
 
 type IntroOverlayProps = {
@@ -12,36 +12,59 @@ type IntroOverlayProps = {
   progress: number;
   onSkip: () => void;
   logoUrl?: string | null;
+  theme?: IntroTheme;
 };
 
-export function IntroOverlay({ displayName, eventName, progress, onSkip, logoUrl }: IntroOverlayProps) {
+export function IntroOverlay({
+  displayName,
+  eventName,
+  progress,
+  onSkip,
+  logoUrl,
+  theme = 'filli',
+}: IntroOverlayProps) {
   const insets = useSafeAreaInsets();
+  const palette = getMatrixPalette(theme);
+  const tone = theme === 'filli' ? 'green' : 'cyan';
   const nameText = (displayName || '').trim() || 'Katılımcı';
+  const scrim = theme === 'filli'
+    ? (['rgba(1,10,4,0.72)', 'rgba(1,10,4,0.38)', 'rgba(1,10,4,0.88)'] as const)
+    : (['rgba(2,12,22,0.72)', 'rgba(7,20,34,0.42)', 'rgba(7,20,34,0.9)'] as const);
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <LinearGradient
-        colors={['rgba(1,10,4,0.72)', 'rgba(1,10,4,0.38)', 'rgba(1,10,4,0.88)']}
-        style={StyleSheet.absoluteFill}
-      />
+      <LinearGradient colors={[...scrim]} style={StyleSheet.absoluteFill} />
       <View style={[styles.topBar, { top: Math.max(insets.top, 12) + 8 }]} pointerEvents="box-none">
         <View />
-        <TouchableOpacity onPress={onSkip} style={styles.skipBtn} accessibilityRole="button" accessibilityLabel="Uygulamaya geç">
-          <MatrixText text="Atla" tone="green" delayMs={0} style={styles.skipText} />
+        <TouchableOpacity
+          onPress={onSkip}
+          style={[styles.skipBtn, { backgroundColor: palette.card, borderColor: palette.border }]}
+          accessibilityRole="button"
+          accessibilityLabel="Uygulamaya geç"
+        >
+          <MatrixText text="Atla" tone={tone} delayMs={0} style={styles.skipText} />
         </TouchableOpacity>
       </View>
       <View style={styles.center} pointerEvents="none">
         <View style={styles.logoWrap}>
           <EventLogo uri={logoUrl} width={260} height={110} />
         </View>
-        <MatrixText text="Hoş geldiniz" tone="green" delayMs={40} style={styles.welcome} />
-        <MatrixText text={nameText} tone="green" delayMs={80} style={styles.name} numberOfLines={2} />
+        <MatrixText text="Hoş geldiniz" tone={tone} delayMs={40} style={styles.welcome} />
+        <MatrixText text={nameText} tone={tone} delayMs={80} style={styles.name} numberOfLines={2} />
         {eventName ? (
-          <MatrixText text={eventName} tone="green" delayMs={120} style={styles.event} numberOfLines={2} />
+          <MatrixText text={eventName} tone={tone} delayMs={120} style={styles.event} numberOfLines={2} />
         ) : null}
       </View>
-      <View style={[styles.progressTrack, { bottom: Math.max(insets.bottom, 16) + 12 }]}>
-        <View style={[styles.progressFill, { width: `${Math.max(0, Math.min(100, progress * 100))}%` }]} />
+      <View
+        style={[
+          styles.progressTrack,
+          {
+            bottom: Math.max(insets.bottom, 16) + 12,
+            backgroundColor: theme === 'filli' ? 'rgba(0, 255, 65, 0.18)' : 'rgba(43, 182, 232, 0.18)',
+          },
+        ]}
+      >
+        <View style={[styles.progressFill, { width: `${Math.max(0, Math.min(100, progress * 100))}%`, backgroundColor: palette.button }]} />
       </View>
     </View>
   );
@@ -58,9 +81,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   skipBtn: {
-    backgroundColor: 'rgba(0, 18, 8, 0.55)',
     borderWidth: 1,
-    borderColor: MatrixGreen.border,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 999,
@@ -104,11 +125,9 @@ const styles = StyleSheet.create({
     bottom: 36,
     height: 3,
     borderRadius: 99,
-    backgroundColor: 'rgba(0, 255, 65, 0.18)',
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: MatrixGreen.button,
   },
 });

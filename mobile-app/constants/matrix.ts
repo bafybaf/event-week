@@ -41,3 +41,25 @@ export const Brand = {
   onPrimary: MatrixPalette.buttonText,
   rgb: '43, 182, 232',
 };
+
+export type IntroTheme = 'filli' | 'brand';
+
+export function isFilliBoyaEvent(event?: { name?: string } | null) {
+  return /filli/i.test(String(event?.name || ''));
+}
+
+export function getIntroTheme(event?: { name?: string } | null): IntroTheme {
+  return isFilliBoyaEvent(event) ? 'filli' : 'brand';
+}
+
+export function getMatrixPalette(theme: IntroTheme = 'brand') {
+  return theme === 'filli' ? MatrixGreen : MatrixPalette;
+}
+
+export function matrixGlyphsForEvent(eventName?: string | null) {
+  const base = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789#$%<>';
+  const extra = String(eventName || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9ÇĞİÖŞÜ]/g, '');
+  return extra ? `${extra}${extra}${extra}${base}` : base;
+}

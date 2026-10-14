@@ -1,15 +1,20 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { MatrixGreen } from '../constants/matrix';
+import { getMatrixPalette, matrixGlyphsForEvent, type IntroTheme } from '../constants/matrix';
 
-const GLYPHS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ0123456789#$%<>';
+type MatrixRainProps = {
+  theme?: IntroTheme;
+  eventName?: string;
+};
 
-function randomGlyph() {
-  return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+function randomGlyph(glyphs: string) {
+  return glyphs[Math.floor(Math.random() * glyphs.length)];
 }
 
-export function MatrixRain() {
+export function MatrixRain({ theme = 'filli', eventName }: MatrixRainProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const palette = getMatrixPalette(theme);
+  const glyphs = useMemo(() => matrixGlyphsForEvent(eventName), [eventName]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -38,14 +43,14 @@ export function MatrixRain() {
       raf = requestAnimationFrame(tick);
       if (time - last < 33) return;
       last = time;
-      ctx.fillStyle = MatrixGreen.rainFade;
+      ctx.fillStyle = palette.rainFade;
       ctx.fillRect(0, 0, width, height);
       ctx.font = '13px ui-monospace, Menlo, Consolas, monospace';
       for (let i = 0; i < drops.length; i += 1) {
         const x = i * 16;
         const y = drops[i] * 16;
-        ctx.fillStyle = i % 7 === 0 ? MatrixGreen.rainHead : MatrixGreen.rain;
-        ctx.fillText(randomGlyph(), x, y);
+        ctx.fillStyle = i % 7 === 0 ? palette.rainHead : palette.rain;
+        ctx.fillText(randomGlyph(glyphs), x, y);
         if (y > height && Math.random() > 0.975) drops[i] = 0;
         else drops[i] += 1;
       }
@@ -58,7 +63,7 @@ export function MatrixRain() {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [palette, glyphs]);
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>

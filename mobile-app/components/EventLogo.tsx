@@ -15,8 +15,9 @@ type EventLogoProps = {
 
 export function pickEventLogoUri(event?: {
   logo?: string | null;
+  appLogo?: string | null;
 } | null) {
-  return event?.logo || null;
+  return event?.appLogo || event?.logo || null;
 }
 
 export function EventLogo({ uri, size = 36, width, height }: EventLogoProps) {

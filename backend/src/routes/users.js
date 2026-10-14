@@ -30,6 +30,62 @@ const getPhoneVariants = (phoneNumber) => {
   return Array.from(variants);
 };
 
+const EVENT_BRANDING_ATTRS = [
+  'id',
+  'name',
+  'description',
+  'startDate',
+  'endDate',
+  'location',
+  'status',
+  'city',
+  'coverImage',
+  'logo',
+  'appLogo',
+  'introVideoUrl',
+  'introVideoFileName'
+];
+
+const findActiveUserWithEventByPhone = async (phoneNumber, eventId) => {
+  const cleanPhone = String(phoneNumber || '').replace(/\D/g, '');
+  if (cleanPhone.length < 10) return null;
+
+  const variants = getPhoneVariants(cleanPhone);
+  const last10 = cleanPhone.slice(-10);
+  const phoneWhere = {
+    [Op.or]: [
+      { phoneNumber: { [Op.in]: variants } },
+      { phone: { [Op.in]: variants } },
+      ...(last10.length === 10
+        ? [
+            { phoneNumber: { [Op.like]: `%${last10}` } },
+            { phone: { [Op.like]: `%${last10}` } }
+          ]
+        : [])
+    ]
+  };
+
+  const where = {
+    isActive: true,
+    ...phoneWhere
+  };
+
+  if (eventId) {
+    where.eventId = eventId;
+  }
+
+  return User.findOne({
+    where,
+    attributes: { exclude: ['password'] },
+    include: [{
+      model: Event,
+      as: 'event',
+      attributes: EVENT_BRANDING_ATTRS
+    }],
+    order: [['updatedAt', 'DESC']]
+  });
+};
+
 const router = express.Router();
 
 // @route   GET /api/users
@@ -153,6 +209,36 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// @route   POST /api/users/lookup-phone
+// @desc    Public branding preview for a phone number (no JWT)
+// @access  Public (for mobile app)
+router.post('/lookup-phone', async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+    const user = await findActiveUserWithEventByPhone(phoneNumber);
+    const event = user && user.event ? user.event : null;
+
+    res.json({
+      success: true,
+      event: event
+        ? {
+            id: event.id,
+            name: event.name,
+            logo: event.logo || null,
+            appLogo: event.appLogo || event.logo || null,
+            introVideoUrl: event.introVideoUrl || null
+          }
+        : null
+    });
+  } catch (error) {
+    console.error('Phone lookup error:', error);
+    res.json({
+      success: true,
+      event: null
+    });
+  }
+});
+
 // @route   POST /api/users/validate-phone
 // @desc    Validate user by phone number and open their assigned event
 // @access  Public (for mobile app)
@@ -168,9 +254,6 @@ router.post('/validate-phone', async (req, res) => {
     }
 
     const cleanPhone = String(phoneNumber).replace(/\D/g, '');
-    const variants = getPhoneVariants(cleanPhone);
-    const last10 = cleanPhone.slice(-10);
-
     if (cleanPhone.length < 10) {
       return res.status(400).json({
         success: false,
@@ -178,36 +261,7 @@ router.post('/validate-phone', async (req, res) => {
       });
     }
 
-    const phoneWhere = {
-      [Op.or]: [
-        { phoneNumber: { [Op.in]: variants } },
-        { phone: { [Op.in]: variants } },
-        ...(last10.length === 10 ? [
-          { phoneNumber: { [Op.like]: `%${last10}` } },
-          { phone: { [Op.like]: `%${last10}` } }
-        ] : [])
-      ]
-    };
-
-    const where = {
-      isActive: true,
-      ...phoneWhere
-    };
-
-    if (eventId) {
-      where.eventId = eventId;
-    }
-
-    const user = await User.findOne({
-      where,
-      attributes: { exclude: ['password'] },
-      include: [{
-        model: Event,
-        as: 'event',
-        attributes: ['id', 'name', 'description', 'startDate', 'endDate', 'location', 'status', 'city', 'coverImage', 'logo', 'appLogo', 'introVideoUrl', 'introVideoFileName']
-      }],
-      order: [['updatedAt', 'DESC']]
-    });
+    const user = await findActiveUserWithEventByPhone(cleanPhone, eventId);
 
     if (!user || !user.eventId) {
       return res.status(404).json({

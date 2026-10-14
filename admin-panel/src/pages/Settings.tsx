@@ -638,7 +638,7 @@ const Settings: React.FC = () => {
 
       <div className="bg-white p-6 rounded-lg shadow mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Uygulama logosu</h2>
-        <p className="text-sm text-gray-500 mb-4">Telefonla giriş ekranında görünür. Tek uygulamadır, etkinliklere göre değişmez.</p>
+        <p className="text-sm text-gray-500 mb-4">Numara henüz eşleşmeden telefon giriş ekranında görünür. Numara girilince etkinliğin kendi logosu kullanılır.</p>
         {appLogo ? (
           <div className="flex items-center gap-3 rounded-md border bg-gray-50 p-3">
             <img
@@ -672,7 +672,7 @@ const Settings: React.FC = () => {
 
       <div className="bg-white p-6 rounded-lg shadow mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Giriş videosu</h2>
-        <p className="text-sm text-gray-500 mb-4">Katılımcı numarayla girdikten sonra tam ekran oynatılır. Tek uygulamadır, etkinliklere göre değişmez.</p>
+        <p className="text-sm text-gray-500 mb-4">Filli Boya etkinliği için yedek hoş geldiniz videosu. Diğer etkinliklerin videosu Etkinlikler sayfasından yüklenir; yoksa Matrix açılış gösterilir.</p>
         {introVideoUrl ? (
           <div className="space-y-2">
             <video src={getLogoHref(introVideoUrl)} controls className="w-full max-h-48 rounded-md bg-black" />

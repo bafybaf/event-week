@@ -16,8 +16,6 @@ import Constants from 'expo-constants';
  * Örnek: '192.168.1.100'
  */
 
-const DEVICE_IP = '192.168.1.100';
-
 const PRODUCTION_API_URL = 'http://xcnmst8cowlxzcnc24jgwofs.76.13.14.253.sslip.io/api';
 
 const getApiUrl = (): string => {
@@ -29,28 +27,6 @@ const getApiUrl = (): string => {
   const extraUrl = Constants.expoConfig?.extra?.apiUrl;
   if (typeof extraUrl === 'string' && extraUrl.length > 0) {
     return extraUrl;
-  }
-
-  if (!__DEV__) {
-    return PRODUCTION_API_URL;
-  }
-
-  if (Platform.OS === 'web') {
-    return 'http://localhost:3000/api';
-  }
-
-  if (DEVICE_IP && DEVICE_IP !== '192.168.1.100') {
-    return `http://${DEVICE_IP}:3000/api`;
-  }
-
-  const debuggerHost = Constants.expoConfig?.hostUri ||
-                       Constants.expoConfig?.extra?.debuggerHost;
-
-  if (debuggerHost) {
-    const [host] = debuggerHost.split(':');
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return `http://${host}:3000/api`;
-    }
   }
 
   return PRODUCTION_API_URL;
