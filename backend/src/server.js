@@ -255,6 +255,7 @@ const startServer = async () => {
     await models.Event.ensureIntroVideoColumns();
     await models.Setting.ensureAppLogo();
     await models.Setting.ensureAppIntroVideo();
+    await models.Setting.ensureAppLauncherIcon();
     await models.FeedItem.sync();
     await models.FeedLike.sync();
     await models.FeedComment.sync();

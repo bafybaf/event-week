@@ -151,6 +151,30 @@ Setting.ensureAppLogo = async function () {
   }
 };
 
+Setting.ensureAppLauncherIcon = async function () {
+  try {
+    await Setting.sync();
+    const setting = await Setting.findOne({ where: { key: 'app_launcher_icon' } });
+    if (setting) return;
+    await Setting.create({
+      key: 'app_launcher_icon',
+      value: '',
+      type: 'string',
+      category: 'appearance',
+      description: 'Telefon ana ekranı uygulama ikonu (yeni APK derlemesinde uygulanır)',
+      isPublic: true,
+      isEditable: true,
+      isRequired: false,
+      eventId: null,
+      group: 'branding',
+      order: 3,
+      isActive: true
+    });
+  } catch (error) {
+    console.warn('App launcher icon setting ensure:', error.message);
+  }
+};
+
 Setting.ensureAppIntroVideo = async function () {
   try {
     await Setting.sync();

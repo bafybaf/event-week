@@ -7,6 +7,7 @@
     "runtimeVersion": "57.0.0",
     "orientation": "portrait",
     "scheme": "eventweek",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
@@ -20,21 +21,23 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2BB6E8"
       },
       "package": "com.yourcompany.eventweek",
       "versionCode": 1,
       "usesCleartextTraffic": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "READ_MEDIA_IMAGES",
-        "WRITE_EXTERNAL_STORAGE",
-        "NOTIFICATIONS",
-        "POST_NOTIFICATIONS",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.NOTIFICATIONS",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -75,10 +78,10 @@
     },
     "extra": {
       "router": {},
+      "apiUrl": "http://xcnmst8cowlxzcnc24jgwofs.76.13.14.253.sslip.io/api",
       "eas": {
-        "projectId": "ea43011d-9098-43c4-9247-5532889acd9e"
-      },
-      "apiUrl": "https://api.yourdomain.com/api"
+        "projectId": "1569b470-2b00-4408-b31c-73172ece9800"
+      }
     }
   }
 }

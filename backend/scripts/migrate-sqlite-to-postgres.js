@@ -2,7 +2,7 @@ const path = require('path');
 const sqlite3 = require('sqlite3');
 const { Client } = require('pg');
 
-const sqlitePath = path.join(__dirname, '..', 'database.sqlite');
+const sqlitePath = process.env.SQLITE_PATH || path.join(__dirname, '..', 'database.sqlite');
 
 function sqliteAll(db, sql, params = []) {
   return new Promise((resolve, reject) => {

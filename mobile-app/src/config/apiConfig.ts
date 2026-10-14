@@ -16,64 +16,44 @@ import Constants from 'expo-constants';
  * Örnek: '192.168.1.100'
  */
 
-// ⚠️ ÖNEMLİ: Bu IP adresini bilgisayarınızın local IP adresi ile değiştirin!
-// Windows: ipconfig komutu ile bulabilirsiniz
-// Mac/Linux: ifconfig veya ip addr komutu ile bulabilirsiniz
-const DEVICE_IP = '192.168.1.100'; // Buraya bilgisayarınızın IP'sini yazın
+const DEVICE_IP = '192.168.1.100';
 
-// Environment variable'dan API URL al (varsa)
+const PRODUCTION_API_URL = 'http://xcnmst8cowlxzcnc24jgwofs.76.13.14.253.sslip.io/api';
+
 const getApiUrl = (): string => {
-  // Production için environment variable'dan al (EXPO_PUBLIC_API_URL)
-  // Bu değişken .env dosyasında veya build sırasında ayarlanmalı
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl) {
-    console.log('🌍 Using API URL from environment:', envUrl);
     return envUrl;
   }
 
-  // Platform kontrolü
+  const extraUrl = Constants.expoConfig?.extra?.apiUrl;
+  if (typeof extraUrl === 'string' && extraUrl.length > 0) {
+    return extraUrl;
+  }
+
+  if (!__DEV__) {
+    return PRODUCTION_API_URL;
+  }
+
   if (Platform.OS === 'web') {
-    // Web platformu: localhost kullan
     return 'http://localhost:3000/api';
   }
 
-  // Native platform (iOS/Android)
-  // Expo Go için bilgisayarın local IP adresini kullan
   if (DEVICE_IP && DEVICE_IP !== '192.168.1.100') {
-    // Manuel olarak ayarlanmış IP kullan
     return `http://${DEVICE_IP}:3000/api`;
   }
 
-  // Expo Constants'dan debugger host bilgisini almayı dene
-  // Bu genellikle Expo Go'da çalışır
-  const debuggerHost = Constants.expoConfig?.hostUri || 
+  const debuggerHost = Constants.expoConfig?.hostUri ||
                        Constants.expoConfig?.extra?.debuggerHost;
-  
+
   if (debuggerHost) {
-    // Expo Go debugger host formatı: "192.168.1.100:8081"
-    // Port'u 3000'e değiştir
     const [host] = debuggerHost.split(':');
     if (host && host !== 'localhost' && host !== '127.0.0.1') {
       return `http://${host}:3000/api`;
     }
   }
 
-  // Fallback: localhost (native'de çalışmaz ama hata mesajı için)
-  if (__DEV__) {
-    console.warn('⚠️ API URL ayarlanmadı! DEVICE_IP değişkenini bilgisayarınızın IP adresi ile güncelleyin.');
-    console.warn('📱 Expo Go terminalinde gösterilen IP adresini kullanın.');
-  }
-  
-  // Production için: Buraya production API URL'inizi yazın
-  // Örnek: 'https://api.yourdomain.com/api'
-  const productionUrl = 'https://api.yourdomain.com/api'; // Production URL'inizi buraya yazın
-  
-  // Production build kontrolü
-  if (!__DEV__ && productionUrl && productionUrl !== 'https://api.yourdomain.com/api') {
-    return productionUrl;
-  }
-  
-  return 'http://localhost:3000/api';
+  return PRODUCTION_API_URL;
 };
 
 export const API_BASE_URL = getApiUrl();

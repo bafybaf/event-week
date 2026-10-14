@@ -34,6 +34,8 @@ const Settings: React.FC = () => {
   const [filterEvent, setFilterEvent] = useState('');
   const [appLogo, setAppLogo] = useState('');
   const [uploadingAppLogo, setUploadingAppLogo] = useState(false);
+  const [appIcon, setAppIcon] = useState('');
+  const [uploadingAppIcon, setUploadingAppIcon] = useState(false);
   const [introVideoUrl, setIntroVideoUrl] = useState('');
   const [introVideoFileName, setIntroVideoFileName] = useState('');
   const [uploadingIntroVideo, setUploadingIntroVideo] = useState(false);
@@ -74,6 +76,7 @@ const Settings: React.FC = () => {
   useEffect(() => {
     fetchEvents();
     fetchAppLogo();
+    fetchAppIcon();
     fetchIntroVideo();
   }, []);
 
@@ -141,6 +144,79 @@ const Settings: React.FC = () => {
       toast.error(error.message || 'Logo yüklenirken hata oluştu');
     } finally {
       setUploadingAppLogo(false);
+    }
+  };
+
+  const fetchAppIcon = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ORIGIN}/api/settings/app-icon`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      setAppIcon(data.appIcon || '');
+    } catch (error) {
+      console.error('Error fetching app icon:', error);
+    }
+  };
+
+  const saveAppIcon = async (url: string) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_ORIGIN}/api/settings/app-icon`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ appIcon: url })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Ana ekran ikonu kaydedilemedi');
+    }
+    setAppIcon(result.appIcon || url);
+  };
+
+  const handleAppIconUpload = async (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Sadece görsel yükleyebilirsiniz (PNG veya JPG, 1024x1024 önerilir)');
+      return;
+    }
+
+    try {
+      setUploadingAppIcon(true);
+      const formData = new FormData();
+      formData.append('image', file);
+      const token = localStorage.getItem('token');
+      const uploadResponse = await fetch(`${API_ORIGIN}/api/upload/event-logo`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const uploadResult = await uploadResponse.json();
+      if (!uploadResponse.ok || !uploadResult.success) {
+        throw new Error(uploadResult.error || 'İkon yüklenemedi');
+      }
+      await saveAppIcon(uploadResult.data.url);
+      toast.success('Ana ekran ikonu kaydedildi. Yeni APK derlemesinde uygulanır.');
+    } catch (error: any) {
+      toast.error(error.message || 'İkon yüklenirken hata oluştu');
+    } finally {
+      setUploadingAppIcon(false);
+    }
+  };
+
+  const handleRemoveAppIcon = async () => {
+    try {
+      setUploadingAppIcon(true);
+      await saveAppIcon('');
+      toast.success('Ana ekran ikonu kaldırıldı');
+    } catch (error: any) {
+      toast.error(error.message || 'İkon kaldırılırken hata oluştu');
+    } finally {
+      setUploadingAppIcon(false);
     }
   };
 
@@ -467,7 +543,12 @@ const Settings: React.FC = () => {
   };
 
   const filteredSettings = settings.filter(setting => {
-    if (setting.key === 'app_logo' || setting.key === 'app_intro_video' || setting.key === 'app_intro_video_file_name') return false;
+    if (
+      setting.key === 'app_logo' ||
+      setting.key === 'app_launcher_icon' ||
+      setting.key === 'app_intro_video' ||
+      setting.key === 'app_intro_video_file_name'
+    ) return false;
     const matchesSearch = setting.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          setting.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          setting.value.toLowerCase().includes(searchTerm.toLowerCase());
@@ -488,6 +569,7 @@ const Settings: React.FC = () => {
             onClick={() => {
               fetchSettings();
               fetchAppLogo();
+              fetchAppIcon();
               fetchIntroVideo();
             }}
             className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2"
@@ -503,6 +585,55 @@ const Settings: React.FC = () => {
             Yeni Ayar
           </button>
         </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <h2 className="text-lg font-semibold text-gray-900">Ana ekran ikonu</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Telefondaki uygulama listesinde görünen ikon. PNG/JPG, kare, 1024×1024 önerilir.
+          Anında değişmez; kaydettikten sonra yeni APK derlemeniz gerekir.
+        </p>
+        {appIcon ? (
+          <div className="flex items-center gap-3 rounded-md border bg-gray-50 p-3">
+            <img
+              src={getLogoHref(appIcon)}
+              alt="Ana ekran ikonu"
+              className="h-16 w-16 object-contain rounded-2xl bg-white border"
+            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
+                {uploadingAppIcon ? 'Yükleniyor...' : 'Değiştir'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  disabled={uploadingAppIcon}
+                  onChange={(e) => handleAppIconUpload(e.target.files?.[0])}
+                />
+              </label>
+              <button
+                type="button"
+                className="text-sm text-red-600 hover:text-red-800 text-left disabled:opacity-50"
+                disabled={uploadingAppIcon}
+                onClick={handleRemoveAppIcon}
+              >
+                Kaldır
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-md p-4 cursor-pointer text-sm text-gray-600 hover:bg-gray-50">
+            <ImageIcon className="h-4 w-4" />
+            {uploadingAppIcon ? 'Yükleniyor...' : 'İkon seçin (PNG, JPG, 1024×1024)'}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              disabled={uploadingAppIcon}
+              onChange={(e) => handleAppIconUpload(e.target.files?.[0])}
+            />
+          </label>
+        )}
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow mb-6">

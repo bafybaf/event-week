@@ -10,6 +10,9 @@
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://xcnmst8cowlxzcnc24jgwofs.76.13.14.253.sslip.io/api"
+      },
       "android": {
         "buildType": "apk"
       }
@@ -17,7 +20,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.yourdomain.com/api"
+        "EXPO_PUBLIC_API_URL": "http://xcnmst8cowlxzcnc24jgwofs.76.13.14.253.sslip.io/api"
       },
       "android": {
         "buildType": "apk"

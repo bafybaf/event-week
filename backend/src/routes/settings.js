@@ -7,6 +7,7 @@ const User = require('../models/User');
 const router = express.Router();
 
 const APP_LOGO_KEY = 'app_logo';
+const APP_LAUNCHER_ICON_KEY = 'app_launcher_icon';
 const APP_INTRO_VIDEO_KEY = 'app_intro_video';
 const APP_INTRO_VIDEO_NAME_KEY = 'app_intro_video_file_name';
 
@@ -37,6 +38,15 @@ const upsertSetting = async (key, value, description, order = 0) => {
 
 const upsertAppLogo = async (value) => {
   return upsertSetting(APP_LOGO_KEY, value, 'Uygulama logosu (telefonla giriş ekranı)', 0);
+};
+
+const upsertAppLauncherIcon = async (value) => {
+  return upsertSetting(
+    APP_LAUNCHER_ICON_KEY,
+    value,
+    'Telefon ana ekranı uygulama ikonu (yeni APK derlemesinde uygulanır)',
+    3
+  );
 };
 
 const readAppIntroVideo = async () => {
@@ -94,9 +104,67 @@ router.get('/app-logo', auth, async (req, res) => {
   }
 });
 
-// @route   PUT /api/settings/app-logo
-// @desc    Set application logo
-// @access  Private (Admin/Organizer)
+router.get('/public/app-icon', async (req, res) => {
+  try {
+    const setting = await Setting.findOne({ where: { key: APP_LAUNCHER_ICON_KEY } });
+    res.json({
+      success: true,
+      appIcon: setting?.value || null
+    });
+  } catch (error) {
+    console.error('Get public app icon error:', error);
+    res.json({
+      success: true,
+      appIcon: null
+    });
+  }
+});
+
+router.get('/app-icon', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied. Admin or organizer role required.'
+      });
+    }
+    const setting = await Setting.findOne({ where: { key: APP_LAUNCHER_ICON_KEY } });
+    res.json({
+      success: true,
+      appIcon: setting?.value || ''
+    });
+  } catch (error) {
+    console.error('Get app icon error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+});
+
+router.put('/app-icon', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied. Admin or organizer role required.'
+      });
+    }
+    const setting = await upsertAppLauncherIcon(req.body.appIcon);
+    res.json({
+      success: true,
+      appIcon: setting.value || '',
+      message: 'Ana ekran ikonu kaydedildi. Yeni APK derlemesinde uygulanır.'
+    });
+  } catch (error) {
+    console.error('Update app icon error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Ana ekran ikonu güncellenirken bir hata oluştu'
+    });
+  }
+});
+
 router.put('/app-logo', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
