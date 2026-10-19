@@ -9,6 +9,7 @@ interface Setting {
   value: string;
   description: string;
   type: string;
+  category?: string;
   eventId: number | null;
   event?: {
     id: number;
@@ -45,6 +46,7 @@ const Settings: React.FC = () => {
     value: '',
     description: '',
     type: 'string',
+    category: 'general',
     eventId: '',
     notes: ''
   });
@@ -469,6 +471,7 @@ const Settings: React.FC = () => {
       value: '',
       description: '',
       type: 'string',
+      category: 'general',
       eventId: '',
       notes: ''
     });
@@ -481,6 +484,7 @@ const Settings: React.FC = () => {
       value: setting.value,
       description: setting.description,
       type: setting.type,
+      category: setting.category || 'general',
       eventId: setting.eventId ? setting.eventId.toString() : '',
       notes: ''
     });
@@ -921,6 +925,18 @@ const Settings: React.FC = () => {
                   >
                     {settingTypes.map(type => (
                       <option key={type.value} value={type.value}>{type.icon} {type.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
+                  <select
+                    value={newSetting.category}
+                    onChange={(e) => setNewSetting({...newSetting, category: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {settingCategories.map(category => (
+                      <option key={category.value} value={category.value}>{category.icon} {category.label}</option>
                     ))}
                   </select>
                 </div>

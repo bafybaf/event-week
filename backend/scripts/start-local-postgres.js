@@ -15,7 +15,15 @@ async function main() {
     initdbFlags: ['--encoding=UTF8', '--no-locale']
   });
 
-  await pg.initialise();
+  const fs = require('fs');
+  const alreadyInitialized = fs.existsSync(path.join(databaseDir, 'PG_VERSION'));
+  const stalePid = path.join(databaseDir, 'postmaster.pid');
+  if (alreadyInitialized && fs.existsSync(stalePid)) {
+    fs.unlinkSync(stalePid);
+  }
+  if (!alreadyInitialized) {
+    await pg.initialise();
+  }
   await pg.start();
 
   const dbName = process.env.DB_NAME || 'event_week';

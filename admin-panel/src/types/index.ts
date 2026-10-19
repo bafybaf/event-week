@@ -7,6 +7,7 @@ export interface User {
   department?: string;
   company?: string;
   phone?: string;
+  phoneNumber?: string;
   profileImage?: string;
   qrCode?: string;
   role: 'participant' | 'speaker' | 'admin' | 'organizer';

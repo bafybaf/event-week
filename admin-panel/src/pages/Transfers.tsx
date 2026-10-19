@@ -254,7 +254,7 @@ const Transfers: React.FC = () => {
       const created = await transfersApi.createTransfer(payload);
       
       // Backend response'unu formatla
-      const formattedTransfer = {
+      const formattedTransfer: Transfer = {
         id: created.id,
         eventId: String(created.eventId || created.event?.id || newTransfer.eventId),
         name: created.name,
@@ -262,8 +262,8 @@ const Transfers: React.FC = () => {
         type: newTransfer.type || 'airport',
         fromLocation: created.departureLocation || created.fromLocation || '',
         toLocation: created.arrivalLocation || created.toLocation || '',
-        departureTime: created.departureTime ? (typeof created.departureTime === 'string' ? created.departureTime.split('T')[1]?.slice(0, 5) : new Date(created.departureTime).toTimeString().slice(0, 5)) : newTransfer.departureTime,
-        arrivalTime: created.arrivalTime ? (typeof created.arrivalTime === 'string' ? created.arrivalTime.split('T')[1]?.slice(0, 5) : new Date(created.arrivalTime).toTimeString().slice(0, 5)) : newTransfer.arrivalTime,
+        departureTime: created.departureTime ? (typeof created.departureTime === 'string' ? created.departureTime.split('T')[1]?.slice(0, 5) : new Date(created.departureTime).toTimeString().slice(0, 5)) : (newTransfer.departureTime || ''),
+        arrivalTime: created.arrivalTime ? (typeof created.arrivalTime === 'string' ? created.arrivalTime.split('T')[1]?.slice(0, 5) : new Date(created.arrivalTime).toTimeString().slice(0, 5)) : (newTransfer.arrivalTime || ''),
         capacity: created.capacity || newTransfer.capacity || 20,
         currentBookings: created.currentBookings || 0,
         price: created.price || newTransfer.price || 0,
@@ -334,16 +334,16 @@ const Transfers: React.FC = () => {
       const updated = await transfersApi.updateTransfer(selectedTransfer.id, payload);
       
       // Backend response'unu formatla
-      const formattedTransfer = {
+      const formattedTransfer: Transfer = {
         id: updated.id,
         eventId: String(updated.eventId || updated.event?.id || newTransfer.eventId),
         name: updated.name,
         description: updated.description || '',
         type: newTransfer.type || selectedTransfer.type || 'airport',
-        fromLocation: updated.departureLocation || updated.fromLocation || newTransfer.fromLocation,
-        toLocation: updated.arrivalLocation || updated.toLocation || newTransfer.toLocation,
-        departureTime: updated.departureTime ? (typeof updated.departureTime === 'string' ? updated.departureTime.split('T')[1]?.slice(0, 5) : new Date(updated.departureTime).toTimeString().slice(0, 5)) : newTransfer.departureTime,
-        arrivalTime: updated.arrivalTime ? (typeof updated.arrivalTime === 'string' ? updated.arrivalTime.split('T')[1]?.slice(0, 5) : new Date(updated.arrivalTime).toTimeString().slice(0, 5)) : newTransfer.arrivalTime,
+        fromLocation: updated.departureLocation || updated.fromLocation || newTransfer.fromLocation || '',
+        toLocation: updated.arrivalLocation || updated.toLocation || newTransfer.toLocation || '',
+        departureTime: updated.departureTime ? (typeof updated.departureTime === 'string' ? updated.departureTime.split('T')[1]?.slice(0, 5) : new Date(updated.departureTime).toTimeString().slice(0, 5)) : (newTransfer.departureTime || ''),
+        arrivalTime: updated.arrivalTime ? (typeof updated.arrivalTime === 'string' ? updated.arrivalTime.split('T')[1]?.slice(0, 5) : new Date(updated.arrivalTime).toTimeString().slice(0, 5)) : (newTransfer.arrivalTime || ''),
         capacity: updated.capacity || newTransfer.capacity || 20,
         currentBookings: updated.currentBookings !== undefined ? updated.currentBookings : selectedTransfer.currentBookings,
         price: updated.price || newTransfer.price || 0,
