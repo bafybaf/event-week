@@ -20,17 +20,41 @@ function toAbsolute(url, origin) {
   return `${origin}/${value.replace(/^\//, '')}`;
 }
 
+async function writeIcon(buffer, filePath) {
+  const sharpPath = path.join(__dirname, '..', '..', 'backend', 'node_modules', 'sharp');
+  const sharp = require(sharpPath);
+  const size = 1024;
+  // Android yuvarlak ve adaptive maskesi dış yüzde 18'i keser. Görsel ortaya sığsın.
+  const inner = Math.round(size * 0.62);
+  const pad = Math.floor((size - inner) / 2);
+  const extra = size - inner - pad * 2;
+  await sharp(buffer)
+    .resize(inner, inner, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .extend({
+      top: pad,
+      bottom: pad + extra,
+      left: pad,
+      right: pad + extra,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png()
+    .toFile(filePath);
+}
+
 async function main() {
   const origin = resolveOrigin();
   const assetsDir = path.join(__dirname, '..', 'assets');
   fs.mkdirSync(assetsDir, { recursive: true });
 
   try {
-    const response = await fetch(`${origin}/api/settings/public/app-icon`);
-    const data = await response.json();
-    const remoteUrl = toAbsolute(data.appIcon, origin);
+    const iconResponse = await fetch(`${origin}/api/settings/public/app-icon`);
+    const iconData = await iconResponse.json();
+    const remoteUrl = toAbsolute(iconData.appIcon, origin);
     if (!remoteUrl) {
-      console.log('Launcher icon: panelde ikon yok, mevcut assets kullanılacak.');
+      console.log('Launcher icon: Ayarlar > Uygulama simgesi boş. Geniş logo simge olarak kullanılmaz.');
       return;
     }
 
@@ -43,8 +67,8 @@ async function main() {
       throw new Error('İndirilen ikon boş.');
     }
 
-    fs.writeFileSync(path.join(assetsDir, 'icon.png'), buffer);
-    fs.writeFileSync(path.join(assetsDir, 'adaptive-icon.png'), buffer);
+    await writeIcon(buffer, path.join(assetsDir, 'icon.png'));
+    await writeIcon(buffer, path.join(assetsDir, 'adaptive-icon.png'));
     console.log(`Launcher icon güncellendi: ${remoteUrl}`);
   } catch (error) {
     console.warn('Launcher icon senkronu atlandı:', error.message);

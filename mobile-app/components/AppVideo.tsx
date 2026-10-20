@@ -1,5 +1,6 @@
 import { useEventListener } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { useEffect } from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
 
 type AppVideoProps = {
@@ -9,6 +10,7 @@ type AppVideoProps = {
   shouldPlay?: boolean;
   isLooping?: boolean;
   nativeControls?: boolean;
+  surfaceType?: 'textureView' | 'surfaceView';
   onProgress?: (ratio: number, remainingMs: number) => void;
   onFinish?: () => void;
   onError?: () => void;
@@ -21,6 +23,7 @@ export function AppVideo({
   shouldPlay = false,
   isLooping = false,
   nativeControls = true,
+  surfaceType,
   onProgress,
   onFinish,
   onError,
@@ -36,8 +39,23 @@ export function AppVideo({
   });
 
   useEventListener(player, 'statusChange', (payload: { status?: string }) => {
+    if (payload?.status === 'readyToPlay' && shouldPlay) {
+      player.play();
+    }
     if (payload?.status === 'error') onError?.();
   });
+
+  useEffect(() => {
+    if (!shouldPlay || !uri) return;
+    const start = setTimeout(() => {
+      try {
+        player.play();
+      } catch {
+        // Oynatma hazır olunca statusChange tekrar dener
+      }
+    }, 150);
+    return () => clearTimeout(start);
+  }, [player, shouldPlay, uri]);
 
   useEventListener(player, 'timeUpdate', (payload: { currentTime?: number }) => {
     const duration = player.duration || 0;
@@ -55,6 +73,7 @@ export function AppVideo({
       style={style}
       contentFit={contentFit}
       nativeControls={nativeControls}
+      surfaceType={surfaceType}
     />
   );
 }

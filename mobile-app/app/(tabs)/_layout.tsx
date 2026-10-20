@@ -1,10 +1,11 @@
-import { Tabs, useFocusEffect, useRouter } from 'expo-router';
+import { router, Tabs, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform, View, StyleSheet } from 'react-native';
+import { ColorValue, Platform, Pressable, View, StyleSheet } from 'react-native';
 import { useCallback, useRef } from 'react';
 import { Fonts } from '../../constants/fonts';
 import { hasValidSession } from '../../src/utils/session';
+import { leaveToLogin } from '../../src/utils/logout';
 
 function TabGlyph({
   focused,
@@ -13,7 +14,7 @@ function TabGlyph({
   inactive,
 }: {
   focused: boolean;
-  color: string;
+  color: ColorValue;
   active: keyof typeof Ionicons.glyphMap;
   inactive: keyof typeof Ionicons.glyphMap;
 }) {
@@ -26,7 +27,6 @@ function TabGlyph({
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const hasRedirected = useRef(false);
   const bottomPad = insets.bottom > 0 ? insets.bottom : Platform.OS === 'android' ? 48 : 12;
   const tabBarHeight = 52 + bottomPad;
@@ -41,17 +41,13 @@ export default function TabLayout() {
         }
         if (cancelled || hasRedirected.current) return;
         hasRedirected.current = true;
-        try {
-          router.replace('/');
-        } catch {
-          // ignore
-        }
+        leaveToLogin();
       };
       checkAuth();
       return () => {
         cancelled = true;
       };
-    }, [router])
+    }, [])
   );
 
   return (
@@ -61,7 +57,6 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#2BB6E8',
         tabBarInactiveTintColor: '#7aa3b8',
         tabBarLabelPosition: 'below-icon',
-        safeAreaInsets: { bottom: 0 },
         tabBarStyle: {
           backgroundColor: '#071422',
           borderTopColor: '#1A3A50',
@@ -114,10 +109,18 @@ export default function TabLayout() {
       <Tabs.Screen
         name="program"
         options={{
-          title: 'Program',
+          title: 'Menü',
           headerShown: false,
-          tabBarIcon: ({ color, focused }) => (
-            <TabGlyph focused={focused} color={color} active="calendar" inactive="calendar-outline" />
+          tabBarIcon: ({ color }) => (
+            <TabGlyph focused={false} color={color} active="menu" inactive="menu-outline" />
+          ),
+          tabBarButton: ({ ref: _ref, ...props }) => (
+            <Pressable
+              {...props}
+              accessibilityRole="button"
+              accessibilityLabel="Menü"
+              onPress={() => router.push('/menu')}
+            />
           ),
         }}
       />

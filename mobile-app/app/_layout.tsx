@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useNavigationContainerRef, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
@@ -11,6 +11,7 @@ import { ThemeProvider } from '../contexts/ThemeContext';
 import { useTheme } from '../contexts/ThemeContext';
 import notificationService, { getRouteFromNotificationData } from '../src/services/notificationService';
 import { poppinsAssets, installPoppinsDefaults } from '../constants/fonts';
+import { registerLogoutReset } from '../src/utils/logout';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -268,6 +269,17 @@ function StackNavigator() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(poppinsAssets);
+  const navigationRef = useNavigationContainerRef();
+
+  useEffect(() => {
+    registerLogoutReset(() => {
+      if (!navigationRef.isReady()) return;
+      navigationRef.reset({
+        index: 0,
+        routes: [{ name: 'index' }],
+      });
+    });
+  }, [navigationRef]);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

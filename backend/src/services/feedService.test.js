@@ -4,7 +4,8 @@ const {
   canDeleteComment,
   resolveEventScope,
   validateCreatePayload,
-  splitFeedItems
+  splitFeedItems,
+  normalizeMediaList
 } = require('./feedService');
 
 describe('feedService', () => {
@@ -83,5 +84,20 @@ describe('feedService', () => {
 
     expect(result.stories.map((item) => item.id)).toEqual(['1']);
     expect(result.posts.map((item) => item.id)).toEqual(['2', '4']);
+  });
+
+  test('normalizeMediaList keeps mixed slides and falls back to the single file', () => {
+    expect(normalizeMediaList([
+      { url: 'http://localhost/uploads/feed/a.jpg', type: 'image' },
+      { mediaUrl: '/uploads/feed/b.mp4', mediaType: 'video' },
+      { url: '/uploads/feed/c.gif', type: 'audio' }
+    ])).toEqual([
+      { url: '/uploads/feed/a.jpg', type: 'image', thumbnailUrl: '', fileName: '', fileSize: null },
+      { url: '/uploads/feed/b.mp4', type: 'video', thumbnailUrl: '', fileName: '', fileSize: null }
+    ]);
+
+    expect(normalizeMediaList(null, { mediaUrl: '/uploads/feed/only.jpg', mediaType: 'image' })).toEqual([
+      { url: '/uploads/feed/only.jpg', type: 'image', thumbnailUrl: '', fileName: '', fileSize: null }
+    ]);
   });
 });

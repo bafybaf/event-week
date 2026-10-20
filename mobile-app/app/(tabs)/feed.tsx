@@ -20,6 +20,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { AppVideo } from '../../components/AppVideo';
+import { ZoomableImage } from '../../components/ZoomableImage';
+import { FeedCarousel, type FeedSlide } from '../../components/FeedCarousel';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -52,6 +55,7 @@ interface FeedItem {
   caption?: string;
   mediaUrl?: string;
   mediaType?: MediaType;
+  media?: Array<{ url?: string; type?: MediaType; mediaUrl?: string; mediaType?: MediaType }>;
   likeCount?: number;
   commentCount?: number;
   likedByMe?: boolean;
@@ -67,40 +71,25 @@ interface FeedComment {
   user?: FeedAuthor;
 }
 
-function FeedMedia({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
+const MAX_POST_MEDIA = 10;
+
+function slidesFor(item: FeedItem): FeedSlide[] {
+  const source = Array.isArray(item.media) && item.media.length
+    ? item.media
+    : item.mediaUrl
+      ? [{ url: item.mediaUrl, type: item.mediaType }]
+      : [];
+  return source
+    .map((entry) => ({
+      url: fixImageUrl(entry.url || entry.mediaUrl) || '',
+      type: (entry.type || entry.mediaType || 'image') as MediaType,
+    }))
+    .filter((entry) => !!entry.url);
+}
+
+function FeedMedia({ item, onOpen }: { item: FeedItem; onOpen: (index: number) => void }) {
   const screenW = Dimensions.get('window').width - 24;
-  const maxH = Dimensions.get('window').height * 0.65;
-  const [ratio, setRatio] = useState(1);
-  const uri = fixImageUrl(item.mediaUrl) || '';
-  const height = Math.min(screenW / Math.max(ratio, 0.3), maxH);
-
-  if (item.mediaType === 'video') {
-    return (
-      <AppVideo
-        uri={uri}
-        style={[styles.media, { height: Math.min(screenW * 0.75, maxH), backgroundColor: '#020617' }]}
-        contentFit="contain"
-        shouldPlay={false}
-      />
-    );
-  }
-
-  return (
-    <TouchableOpacity activeOpacity={0.95} onPress={onOpen}>
-      <Image
-        source={{ uri }}
-        style={[styles.media, { height, backgroundColor: '#020617' }]}
-        contentFit="contain"
-        onLoad={(event) => {
-          const width = event.source?.width;
-          const nextHeight = event.source?.height;
-          if (width && nextHeight) {
-            setRatio(width / nextHeight);
-          }
-        }}
-      />
-    </TouchableOpacity>
-  );
+  return <FeedCarousel media={slidesFor(item)} width={screenW} onOpen={onOpen} />;
 }
 
 const displayName = (author?: FeedAuthor) =>
@@ -122,9 +111,10 @@ export default function FeedScreen() {
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerKind, setComposerKind] = useState<FeedKind>('post');
   const [caption, setCaption] = useState('');
-  const [picked, setPicked] = useState<{ uri: string; type: MediaType; name: string } | null>(null);
+  const [pickedList, setPickedList] = useState<{ uri: string; type: MediaType; name: string }[]>([]);
   const [cropSource, setCropSource] = useState<{ uri: string; width: number; height: number; name: string } | null>(null);
   const [viewerItem, setViewerItem] = useState<FeedItem | null>(null);
+  const [viewerIndex, setViewerIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [storyIndex, setStoryIndex] = useState(-1);
   const [commentItem, setCommentItem] = useState<FeedItem | null>(null);
@@ -220,12 +210,21 @@ export default function FeedScreen() {
   const flatStories = storyGroups.flatMap((group) => group.items);
   const activeStory = storyIndex >= 0 ? flatStories[storyIndex] : null;
 
+  const appendPicked = (items: { uri: string; type: MediaType; name: string }[]) => {
+    setPickedList((prev) => {
+      const limit = composerKind === 'story' ? 1 : MAX_POST_MEDIA;
+      const base = composerKind === 'story' ? [] : prev;
+      return [...base, ...items].slice(0, limit);
+    });
+  };
+
   const pickMedia = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert('İzin gerekli', 'Galeri erişimi olmadan paylaşım yapılamaz.');
       return;
     }
+    const multiple = composerKind === 'post';
     const mediaTypes =
       (ImagePicker as any).MediaTypeOptions?.All ||
       ['images', 'videos'];
@@ -233,31 +232,35 @@ export default function FeedScreen() {
       mediaTypes,
       quality: 0.8,
       allowsEditing: false,
+      allowsMultipleSelection: multiple,
+      selectionLimit: multiple ? MAX_POST_MEDIA : 1,
     });
-    if (result.canceled || !result.assets?.[0]) return;
-    const asset = result.assets[0];
-    const type: MediaType = asset.type === 'video' ? 'video' : 'image';
-    const name = asset.fileName || `feed-${Date.now()}.${type === 'video' ? 'mp4' : 'jpg'}`;
-    if (type === 'video') {
-      setPicked({ uri: asset.uri, type, name });
+    if (result.canceled || !result.assets?.length) return;
+    const assets = result.assets.map((asset, index) => {
+      const type: MediaType = asset.type === 'video' ? 'video' : 'image';
+      const name = asset.fileName || `feed-${Date.now()}-${index}.${type === 'video' ? 'mp4' : 'jpg'}`;
+      return { asset, type, name };
+    });
+    if (assets.length === 1 && assets[0].type === 'image') {
+      const { asset, name } = assets[0];
+      const openCrop = (width: number, height: number) => {
+        setCropSource({ uri: asset.uri, width, height, name });
+      };
+      if (asset.width && asset.height) {
+        openCrop(asset.width, asset.height);
+        return;
+      }
+      RNImage.getSize(
+        asset.uri,
+        (width, height) => openCrop(width, height),
+        () => appendPicked([{ uri: asset.uri, type: 'image', name }])
+      );
       return;
     }
-    const openCrop = (width: number, height: number) => {
-      setCropSource({ uri: asset.uri, width, height, name });
-    };
-    if (asset.width && asset.height) {
-      openCrop(asset.width, asset.height);
-      return;
-    }
-    RNImage.getSize(
-      asset.uri,
-      (width, height) => openCrop(width, height),
-      () => setPicked({ uri: asset.uri, type, name })
-    );
+    appendPicked(assets.map(({ asset, type, name }) => ({ uri: asset.uri, type, name })));
   };
 
-  const uploadMedia = async () => {
-    if (!picked) throw new Error('Medya seçilmedi');
+  const uploadMedia = async (picked: { uri: string; type: MediaType; name: string }) => {
     const token = await AsyncStorage.getItem('token');
     if (!token) throw new Error('Oturum bulunamadı');
 
@@ -293,26 +296,39 @@ export default function FeedScreen() {
   };
 
   const publish = async () => {
-    if (!picked) {
+    const queue = composerKind === 'story' ? pickedList.slice(0, 1) : pickedList.slice(0, MAX_POST_MEDIA);
+    if (!queue.length) {
       Alert.alert('Medya seçin', 'Görsel veya video ekleyin.');
       return;
     }
     try {
       setSaving(true);
-      const uploaded = await uploadMedia();
+      const uploaded = [];
+      for (const picked of queue) {
+        const file = await uploadMedia(picked);
+        uploaded.push({
+          url: file.url,
+          type: file.category === 'video' || picked.type === 'video' ? 'video' : 'image',
+          thumbnailUrl: file.thumbnail,
+          fileName: file.fileName || picked.name,
+          fileSize: file.size,
+        });
+      }
+      const first = uploaded[0];
       await apiService.createFeedItem({
         eventId,
         kind: composerKind,
         caption,
-        mediaUrl: uploaded.url,
-        mediaType: uploaded.category === 'video' || picked.type === 'video' ? 'video' : 'image',
-        thumbnailUrl: uploaded.thumbnail,
-        fileName: uploaded.fileName || picked.name,
-        fileSize: uploaded.size,
+        mediaUrl: first.url,
+        mediaType: first.type,
+        thumbnailUrl: first.thumbnailUrl,
+        fileName: first.fileName,
+        fileSize: first.fileSize,
+        media: uploaded,
       });
       setComposerOpen(false);
       setCaption('');
-      setPicked(null);
+      setPickedList([]);
       await fetchFeed();
     } catch (error: any) {
       Alert.alert('Hata', error.message || 'Paylaşım gönderilemedi');
@@ -384,7 +400,13 @@ export default function FeedScreen() {
   };
 
   const renderMedia = (item: FeedItem) => (
-    <FeedMedia item={item} onOpen={() => setViewerItem(item)} />
+    <FeedMedia
+      item={item}
+      onOpen={(index) => {
+        setViewerIndex(index);
+        setViewerItem(item);
+      }}
+    />
   );
 
   const renderPost = ({ item }: { item: FeedItem }) => (
@@ -623,7 +645,10 @@ export default function FeedScreen() {
               {(['post', 'story'] as FeedKind[]).map((kind) => (
                 <TouchableOpacity
                   key={kind}
-                  onPress={() => setComposerKind(kind)}
+                  onPress={() => {
+                    setComposerKind(kind);
+                    if (kind === 'story') setPickedList((prev) => prev.slice(0, 1));
+                  }}
                   style={[
                     styles.kindBtn,
                     { borderColor },
@@ -639,11 +664,33 @@ export default function FeedScreen() {
             <TouchableOpacity style={[styles.pickBtn, { borderColor }]} onPress={pickMedia}>
               <Ionicons name="images-outline" size={22} color={primaryColor} />
               <Text style={{ color: textColor, marginLeft: 8 }}>
-                {picked ? picked.name : 'Görsel veya video seç'}
+                {pickedList.length
+                  ? `${pickedList.length} dosya seçildi`
+                  : composerKind === 'post'
+                    ? 'Görsel veya video seç, birden fazla eklenebilir'
+                    : 'Görsel veya video seç'}
               </Text>
             </TouchableOpacity>
-            {picked && picked.type === 'image' && (
-              <Image source={{ uri: picked.uri }} style={styles.preview} contentFit="contain" />
+            {pickedList.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.previewRow}>
+                {pickedList.map((picked, index) => (
+                  <View key={`${picked.uri}-${index}`} style={styles.previewTile}>
+                    {picked.type === 'video' ? (
+                      <View style={[styles.previewThumb, styles.previewVideo]}>
+                        <Ionicons name="videocam" size={22} color="#fff" />
+                      </View>
+                    ) : (
+                      <Image source={{ uri: picked.uri }} style={styles.previewThumb} contentFit="cover" />
+                    )}
+                    <TouchableOpacity
+                      style={styles.previewRemove}
+                      onPress={() => setPickedList((prev) => prev.filter((_, itemIndex) => itemIndex !== index))}
+                    >
+                      <Ionicons name="close" size={14} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
             )}
             <TextInput
               value={caption}
@@ -673,7 +720,7 @@ export default function FeedScreen() {
             imageHeight={cropSource.height}
             onCancel={() => setCropSource(null)}
             onDone={(uri) => {
-              setPicked({ uri, type: 'image', name: cropSource.name });
+              appendPicked([{ uri, type: 'image', name: cropSource.name }]);
               setCropSource(null);
               setComposerOpen(true);
             }}
@@ -682,7 +729,7 @@ export default function FeedScreen() {
       </Modal>
 
       <Modal visible={!!viewerItem} animationType="fade" onRequestClose={() => setViewerItem(null)}>
-        <View style={styles.storyViewer}>
+        <GestureHandlerRootView style={styles.storyViewer}>
           <SafeAreaView style={styles.storyOverlay}>
             <View style={styles.storyTop}>
               <Text style={styles.storyViewerName}>{displayName(viewerItem?.author)}</Text>
@@ -690,22 +737,47 @@ export default function FeedScreen() {
                 <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
             </View>
-            {viewerItem?.mediaType === 'video' ? (
-              <AppVideo
-                uri={fixImageUrl(viewerItem.mediaUrl) || ''}
+            {viewerItem && slidesFor(viewerItem).length > 1 && (
+              <Text style={styles.viewerCount}>
+                {Math.min(viewerIndex + 1, slidesFor(viewerItem).length)}/{slidesFor(viewerItem).length}
+              </Text>
+            )}
+            {viewerItem && (
+              <FlatList
+                data={slidesFor(viewerItem)}
+                horizontal
+                pagingEnabled
+                initialScrollIndex={Math.min(viewerIndex, Math.max(slidesFor(viewerItem).length - 1, 0))}
+                getItemLayout={(_, index) => ({
+                  length: Dimensions.get('window').width,
+                  offset: Dimensions.get('window').width * index,
+                  index,
+                })}
+                keyExtractor={(_, index) => `${viewerItem.id}-${index}`}
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(event) => {
+                  const width = Dimensions.get('window').width;
+                  setViewerIndex(Math.round(event.nativeEvent.contentOffset.x / Math.max(width, 1)));
+                }}
+                renderItem={({ item: slide, index }) => (
+                  <View style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.72 }}>
+                    {slide.type === 'video' ? (
+                      <AppVideo
+                        uri={slide.url}
+                        style={{ flex: 1 }}
+                        contentFit="contain"
+                        shouldPlay={index === viewerIndex}
+                      />
+                    ) : (
+                      <ZoomableImage key={`${viewerItem.id}-${index}-${slide.url}`} uri={slide.url} />
+                    )}
+                  </View>
+                )}
                 style={{ flex: 1 }}
-                contentFit="contain"
-                shouldPlay
-              />
-            ) : (
-              <Image
-                source={{ uri: fixImageUrl(viewerItem?.mediaUrl) || '' }}
-                style={{ flex: 1 }}
-                contentFit="contain"
               />
             )}
           </SafeAreaView>
-        </View>
+        </GestureHandlerRootView>
       </Modal>
     </SafeAreaView>
   );
@@ -787,6 +859,22 @@ const styles = StyleSheet.create({
   kindBtn: { flex: 1, borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
   pickBtn: { borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   preview: { width: '100%', height: 280, borderRadius: 12, marginBottom: 12, backgroundColor: '#020617' },
+  previewRow: { gap: 8, paddingBottom: 12 },
+  previewTile: { width: 84, height: 84 },
+  previewThumb: { width: 84, height: 84, borderRadius: 10, backgroundColor: '#020617' },
+  previewVideo: { alignItems: 'center', justifyContent: 'center' },
+  previewRemove: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewerCount: { color: '#fff', textAlign: 'center', fontWeight: '700', marginBottom: 8 },
   captionInput: { borderWidth: 1, borderRadius: 12, minHeight: 90, padding: 12, textAlignVertical: 'top' },
   publishBtn: { marginTop: 16, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   publishText: { color: '#fff', fontWeight: '700', fontSize: 16 },

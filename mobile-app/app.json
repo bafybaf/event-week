@@ -14,6 +14,9 @@
       "bundleIdentifier": "com.yourcompany.eventweek",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
         "UIBackgroundModes": [
           "remote-notification"
         ]
@@ -22,7 +25,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2BB6E8"
+        "backgroundColor": "#071422"
       },
       "package": "com.yourcompany.eventweek",
       "versionCode": 1,

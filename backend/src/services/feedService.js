@@ -1,6 +1,7 @@
 const STAFF_ROLES = ['admin', 'organizer'];
 const KINDS = ['post', 'story'];
 const MEDIA_TYPES = ['image', 'video'];
+const MAX_POST_MEDIA = 10;
 
 const isStaff = (user) => STAFF_ROLES.includes(user && user.role);
 
@@ -51,6 +52,46 @@ const splitFeedItems = (items = []) => {
   };
 };
 
+const normalizeMediaList = (input, fallback = {}) => {
+  let raw = input;
+  if (typeof raw === 'string') {
+    try {
+      raw = JSON.parse(raw);
+    } catch (error) {
+      raw = [];
+    }
+  }
+  const source = Array.isArray(raw) ? raw : [];
+  const cleaned = source
+    .map((entry) => {
+      const type = entry && (entry.type || entry.mediaType);
+      const url = toRelativeUploadUrl(entry && (entry.url || entry.mediaUrl));
+      if (!url || !MEDIA_TYPES.includes(type)) return null;
+      return {
+        url,
+        type,
+        thumbnailUrl: toRelativeUploadUrl(entry.thumbnailUrl) || '',
+        fileName: entry.fileName || '',
+        fileSize: entry.fileSize || null
+      };
+    })
+    .filter(Boolean)
+    .slice(0, MAX_POST_MEDIA);
+
+  if (!cleaned.length && fallback.mediaUrl) {
+    const type = MEDIA_TYPES.includes(fallback.mediaType) ? fallback.mediaType : 'image';
+    cleaned.push({
+      url: toRelativeUploadUrl(fallback.mediaUrl),
+      type,
+      thumbnailUrl: toRelativeUploadUrl(fallback.thumbnailUrl) || '',
+      fileName: fallback.fileName || '',
+      fileSize: fallback.fileSize || null
+    });
+  }
+
+  return cleaned;
+};
+
 const toRelativeUploadUrl = (url) => {
   if (!url) return '';
   const uploadsIndex = String(url).indexOf('/uploads/');
@@ -67,5 +108,7 @@ module.exports = {
   resolveEventScope,
   validateCreatePayload,
   splitFeedItems,
-  toRelativeUploadUrl
+  toRelativeUploadUrl,
+  normalizeMediaList,
+  MAX_POST_MEDIA
 };

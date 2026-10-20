@@ -51,6 +51,10 @@ const FeedItem = sequelize.define('FeedItem', {
     type: DataTypes.INTEGER,
     allowNull: true
   },
+  mediaItems: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   isActive: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
@@ -66,6 +70,18 @@ FeedItem.associate = (models) => {
   FeedItem.belongsTo(models.User, { foreignKey: 'authorId', as: 'author' });
   FeedItem.hasMany(models.FeedLike, { foreignKey: 'feedItemId', as: 'likes' });
   FeedItem.hasMany(models.FeedComment, { foreignKey: 'feedItemId', as: 'comments' });
+};
+
+FeedItem.ensureMediaItemsColumn = async function () {
+  try {
+    const qi = sequelize.getQueryInterface();
+    const desc = await qi.describeTable('feed_items');
+    if (!desc.media_items) {
+      await qi.addColumn('feed_items', 'media_items', { type: DataTypes.TEXT, allowNull: true });
+    }
+  } catch (error) {
+    console.warn('Feed media column ensure:', error.message);
+  }
 };
 
 module.exports = FeedItem;

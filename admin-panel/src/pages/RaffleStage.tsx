@@ -21,6 +21,7 @@ const RaffleStage: React.FC = () => {
   const [winner, setWinner] = useState<Participant | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [phase, setPhase] = useState<'roster' | 'draw'>('roster');
   const [loading, setLoading] = useState(true);
   const spinRef = useRef(false);
 
@@ -30,13 +31,6 @@ const RaffleStage: React.FC = () => {
       const state = await raffleApi.getState(eventId);
       setEventName(state.event?.name || '');
       setParticipants(state.participants || []);
-      if (state.lastDraw?.winner && !spinRef.current) {
-        const last = state.lastDraw.winner;
-        const idx = (state.participants || []).findIndex((p: Participant) => p.id === last.id);
-        if (idx >= 0) setDisplayIndex(idx);
-        setWinner(last);
-        setRevealed(true);
-      }
     } catch (error: any) {
       toast.error(error?.response?.data?.error || 'Sahne açılamadı');
     } finally {
@@ -47,6 +41,22 @@ const RaffleStage: React.FC = () => {
   useEffect(() => {
     load();
   }, [eventId]);
+
+  const goToRoster = () => {
+    if (spinning) return;
+    setPhase('roster');
+    setRevealed(false);
+    setWinner(null);
+    setDisplayIndex(0);
+  };
+
+  const goToDraw = () => {
+    if (!participants.length) return;
+    setPhase('draw');
+    setRevealed(false);
+    setWinner(null);
+    setDisplayIndex(0);
+  };
 
   const current = participants[displayIndex] || participants[0];
 
@@ -119,15 +129,14 @@ const RaffleStage: React.FC = () => {
         }
         .stage-btn { background:#2BB6E8; color:#042033; font-weight:700; border-radius:14px; padding:12px 22px; }
         .stage-btn-ghost { border:1px solid #1A3A50; color:#7DD9F8; border-radius:14px; padding:12px 22px; }
-        .name-reel { height: 280px; overflow: hidden; position: relative; }
-        .name-reel::before, .name-reel::after {
-          content: '';
-          position: absolute; left: 0; right: 0; height: 72px; z-index: 2; pointer-events: none;
+        .name-reel { height: 280px; overflow: hidden; position: relative; background: transparent; }
+        .reel-row { height: 93px; display: flex; align-items: center; justify-content: center; background: transparent; }
+        .current-name {
+          background: none;
+          text-rendering: geometricPrecision;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
-        .name-reel::before { top: 0; background: linear-gradient(#071422, transparent); }
-        .name-reel::after { bottom: 0; background: linear-gradient(transparent, #071422); }
-        .reel-row { height: 93px; display: flex; align-items: center; justify-content: center; }
-        .spinning .current-name { filter: blur(1px); letter-spacing: 0.04em; }
         .winner-card { animation: winnerPop 0.7s cubic-bezier(.2,1.4,.3,1) both; }
         @keyframes winnerPop {
           0% { transform: scale(0.72); opacity: 0; }
@@ -166,26 +175,55 @@ const RaffleStage: React.FC = () => {
       )}
 
       <header className="flex items-center justify-between px-6 py-4 border-b border-[#1A3A50] relative z-10">
-        <button className="text-[#7DD9F8]" onClick={() => navigate('/raffle')}>← Çekiliş</button>
+        <button className="text-[#7DD9F8]" onClick={() => (phase === 'draw' ? goToRoster() : navigate('/raffle'))}>
+          {phase === 'draw' ? '← Liste' : '← Çekiliş'}
+        </button>
         <div className="text-center">
           <div className="text-lg font-bold">{eventName || 'Çekiliş'}</div>
           <div className="text-sm text-[#7aa3b8]">{participants.length} katılımcı</div>
         </div>
-        <div className="text-sm text-[#7aa3b8]">{spinning ? 'Çekiliyor...' : revealed ? 'Kazanan' : 'Hazır'}</div>
+        <div className="text-sm text-[#7aa3b8]">
+          {spinning ? 'Çekiliyor...' : revealed ? 'Kazanan' : phase === 'roster' ? 'Liste' : 'Hazır'}
+        </div>
       </header>
 
       <main className="flex-1 p-6 flex flex-col items-center justify-center gap-8 relative z-10">
-        {!revealed ? (
+        {phase === 'roster' ? (
+          <div className="w-full max-w-5xl">
+            <div className="text-sm uppercase tracking-[0.35em] text-[#7DD9F8] text-center mb-6">
+              Çekilişe katılanlar
+            </div>
+            {!participants.length ? (
+              <p className="text-[#7aa3b8] text-center">Bu etkinlikte çekilişe katılacak katılımcı yok.</p>
+            ) : (
+              <div className="max-h-[62vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {participants.map((p) => (
+                    <div key={p.id} className="rounded-xl border border-[#1A3A50] bg-[#0D2130] px-4 py-3">
+                      <div className="font-semibold text-lg leading-tight">{p.name}</div>
+                      {p.title || p.company ? (
+                        <div className="mt-1 text-sm text-[#7aa3b8]">
+                          {[p.title, p.company].filter(Boolean).join(' · ')}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : !revealed ? (
+          spinning ? (
           <>
             <div className="text-sm uppercase tracking-[0.35em] text-[#7DD9F8]">Şanslı isim</div>
-            <div className={`name-reel w-full max-w-4xl ${spinning ? 'spinning' : ''}`}>
+            <div className="name-reel w-full max-w-4xl spinning">
               {slotNames.map((p, i) => (
                 <div
                   key={`${p?.id || i}-${i}`}
                   className="reel-row"
                   style={{ opacity: i === 1 ? 1 : 0.28 }}
                 >
-                  <div className={`current-name text-center font-bold ${i === 1 ? 'text-6xl md:text-7xl' : 'text-3xl text-[#7aa3b8]'}`}>
+                  <div className={`current-name text-center font-semibold ${i === 1 ? 'text-6xl md:text-7xl text-white' : 'text-3xl text-[#7aa3b8]'}`}>
                     {p?.name || '—'}
                   </div>
                 </div>
@@ -195,6 +233,13 @@ const RaffleStage: React.FC = () => {
               <div className="text-[#7aa3b8] text-xl">{current.company}</div>
             ) : null}
           </>
+          ) : (
+            <div className="text-center">
+              <div className="text-sm uppercase tracking-[0.35em] text-[#7DD9F8] mb-6">Şanslı isim</div>
+              <div className="text-7xl md:text-8xl font-bold text-[#2BB6E8]">?</div>
+              <div className="mt-6 text-xl text-[#7aa3b8]">{participants.length} kişi arasından çekilecek</div>
+            </div>
+          )
         ) : winner ? (
           <div className="winner-card text-center max-w-3xl">
             <div className="text-sm uppercase tracking-[0.35em] text-[#7DD9F8] mb-4">Kazanan</div>
@@ -210,22 +255,30 @@ const RaffleStage: React.FC = () => {
           </div>
         ) : null}
 
-        {!participants.length ? (
+        {phase === 'draw' && !participants.length ? (
           <p className="text-[#7aa3b8]">Bu etkinlikte çekilişe katılacak katılımcı yok.</p>
         ) : null}
       </main>
 
       <footer className="p-5 border-t border-[#1A3A50] flex justify-center gap-3 relative z-10">
-        <button
-          className="stage-btn"
-          disabled={spinning || !participants.length}
-          onClick={startDraw}
-        >
-          {revealed ? 'Tekrar çek' : spinning ? 'Çekiliyor...' : 'Çekiliş yap'}
-        </button>
-        <button className="stage-btn-ghost" onClick={() => navigate('/raffle')}>
-          Listeye dön
-        </button>
+        {phase === 'roster' ? (
+          <button className="stage-btn" disabled={!participants.length} onClick={goToDraw}>
+            Çekilişe başla
+          </button>
+        ) : (
+          <>
+            <button
+              className="stage-btn"
+              disabled={spinning || !participants.length}
+              onClick={startDraw}
+            >
+              {revealed ? 'Tekrar çek' : spinning ? 'Çekiliyor...' : 'Çekiliş yap'}
+            </button>
+            <button className="stage-btn-ghost" disabled={spinning} onClick={goToRoster}>
+              Listeye dön
+            </button>
+          </>
+        )}
       </footer>
     </div>
   );

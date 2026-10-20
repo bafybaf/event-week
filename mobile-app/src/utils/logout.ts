@@ -1,8 +1,23 @@
-import { Platform } from 'react-native';
+import { BackHandler, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import * as Updates from 'expo-updates';
 import notificationService from '../services/notificationService';
+
+type ResetFn = () => void;
+let resetRoot: ResetFn | null = null;
+
+export function registerLogoutReset(reset: ResetFn) {
+  resetRoot = reset;
+}
+
+export function leaveToLogin() {
+  try {
+    if (resetRoot) resetRoot();
+    else router.replace('/');
+  } catch {
+    router.replace('/');
+  }
+}
 
 export async function logoutAndReset() {
   try {
@@ -23,27 +38,17 @@ export async function logoutAndReset() {
   }
 
   try {
-    if (Updates.isEnabled) {
-      await Updates.reloadAsync();
-      return;
-    }
+    if (resetRoot) resetRoot();
+    else router.replace('/');
   } catch {
-    // Navigasyon yedeğine düş
+    try {
+      router.replace('/');
+    } catch {
+      // ignore
+    }
   }
 
-  try {
-    if (typeof router.dismissTo === 'function') {
-      router.dismissTo('/');
-      return;
-    }
-  } catch {
-    // ignore
+  if (Platform.OS === 'android') {
+    setTimeout(() => BackHandler.exitApp(), 80);
   }
-
-  try {
-    router.dismissAll();
-  } catch {
-    // ignore
-  }
-  router.replace('/');
 }

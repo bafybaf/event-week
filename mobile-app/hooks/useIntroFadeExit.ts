@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import { router } from 'expo-router';
 
@@ -15,17 +15,27 @@ export function useIntroFadeExit() {
     router.replace('/(tabs)' as any);
   }, []);
 
+  const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (fallbackRef.current) clearTimeout(fallbackRef.current);
+    };
+  }, []);
+
   const fadeThenEnter = useCallback(
     (duration = INTRO_FADE_MS) => {
       if (entered.current || fading.current) return;
       fading.current = true;
+      const ms = Math.max(320, Number.isFinite(duration) ? duration : INTRO_FADE_MS);
+      fallbackRef.current = setTimeout(() => enterApp(), ms + 500);
       Animated.timing(contentOpacity, {
         toValue: 0,
-        duration: Math.max(320, Number.isFinite(duration) ? duration : INTRO_FADE_MS),
+        duration: ms,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
-      }).start(({ finished }) => {
-        if (finished) enterApp();
+      }).start(() => {
+        enterApp();
       });
     },
     [enterApp, contentOpacity]

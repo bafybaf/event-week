@@ -7,7 +7,8 @@ const {
   resolveEventScope,
   validateCreatePayload,
   splitFeedItems,
-  toRelativeUploadUrl
+  toRelativeUploadUrl,
+  normalizeMediaList
 } = require('../services/feedService');
 
 const router = express.Router();
@@ -42,10 +43,14 @@ const loadEventsMap = async (ids) => {
 
 const serializeItem = (item, extras = {}) => {
   const data = item.toJSON ? item.toJSON() : { ...item };
+  const media = normalizeMediaList(data.mediaItems, data);
+  const first = media[0] || {};
   return {
     ...data,
-    mediaUrl: toRelativeUploadUrl(data.mediaUrl),
-    thumbnailUrl: toRelativeUploadUrl(data.thumbnailUrl),
+    mediaUrl: first.url || toRelativeUploadUrl(data.mediaUrl),
+    mediaType: first.type || data.mediaType,
+    thumbnailUrl: first.thumbnailUrl || toRelativeUploadUrl(data.thumbnailUrl),
+    media,
     likeCount: extras.likeCount || 0,
     commentCount: extras.commentCount || 0,
     likedByMe: !!extras.likedByMe,
@@ -140,10 +145,21 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Etkinlik gerekli' });
     }
 
+    const media = normalizeMediaList(req.body.media, {
+      mediaUrl: req.body.mediaUrl,
+      mediaType: req.body.mediaType,
+      thumbnailUrl: req.body.thumbnailUrl,
+      fileName: req.body.fileName,
+      fileSize: req.body.fileSize
+    });
+    if (req.body.kind === 'story') {
+      media.splice(1);
+    }
+    const first = media[0] || {};
     const payload = {
       kind: req.body.kind,
-      mediaUrl: toRelativeUploadUrl(req.body.mediaUrl),
-      mediaType: req.body.mediaType,
+      mediaUrl: first.url || '',
+      mediaType: first.type || req.body.mediaType,
       eventId: scope.eventId
     };
 
@@ -156,9 +172,10 @@ router.post('/', auth, async (req, res) => {
       ...payload,
       authorId: req.user.id,
       caption: req.body.caption || '',
-      thumbnailUrl: toRelativeUploadUrl(req.body.thumbnailUrl),
-      fileName: req.body.fileName || '',
-      fileSize: req.body.fileSize || null,
+      thumbnailUrl: first.thumbnailUrl || null,
+      fileName: first.fileName || '',
+      fileSize: first.fileSize || null,
+      mediaItems: JSON.stringify(media),
       isActive: true
     });
 

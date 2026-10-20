@@ -202,7 +202,7 @@ const Settings: React.FC = () => {
         throw new Error(uploadResult.error || 'İkon yüklenemedi');
       }
       await saveAppIcon(uploadResult.data.url);
-      toast.success('Ana ekran ikonu kaydedildi. Yeni APK derlemesinde uygulanır.');
+      toast.success('Uygulama simgesi kaydedildi. Yeni APK derlemesinde uygulanır.');
     } catch (error: any) {
       toast.error(error.message || 'İkon yüklenirken hata oluştu');
     } finally {
@@ -214,7 +214,7 @@ const Settings: React.FC = () => {
     try {
       setUploadingAppIcon(true);
       await saveAppIcon('');
-      toast.success('Ana ekran ikonu kaldırıldı');
+      toast.success('Uygulama simgesi kaldırıldı');
     } catch (error: any) {
       toast.error(error.message || 'İkon kaldırılırken hata oluştu');
     } finally {
@@ -592,18 +592,21 @@ const Settings: React.FC = () => {
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Ana ekran ikonu</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Uygulama simgesi</h2>
         <p className="text-sm text-gray-500 mb-4">
-          Telefondaki uygulama listesinde görünen ikon. PNG/JPG, kare, 1024×1024 önerilir.
-          Anında değişmez; kaydettikten sonra yeni APK derlemeniz gerekir.
+          Telefondaki uygulama simgesi buradan gelir. Alttaki geniş uygulama logosu simgeye basılmaz.
+          Kare bir görsel yükleyin; simge üretilirken logo maskenin içine tam sığacak şekilde küçültülür.
+          Yeni APK derlenmeden telefonda değişmez.
         </p>
         {appIcon ? (
           <div className="flex items-center gap-3 rounded-md border bg-gray-50 p-3">
-            <img
-              src={getLogoHref(appIcon)}
-              alt="Ana ekran ikonu"
-              className="h-16 w-16 object-contain rounded-2xl bg-white border"
-            />
+            <div className="flex h-20 w-20 items-center justify-center rounded-[22px] bg-[#071422] p-3">
+              <img
+                src={getLogoHref(appIcon)}
+                alt="Uygulama simgesi"
+                className="h-full w-full object-contain"
+              />
+            </div>
             <div className="flex flex-col gap-1">
               <label className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
                 {uploadingAppIcon ? 'Yükleniyor...' : 'Değiştir'}
@@ -628,7 +631,7 @@ const Settings: React.FC = () => {
         ) : (
           <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-md p-4 cursor-pointer text-sm text-gray-600 hover:bg-gray-50">
             <ImageIcon className="h-4 w-4" />
-            {uploadingAppIcon ? 'Yükleniyor...' : 'İkon seçin (PNG, JPG, 1024×1024)'}
+            {uploadingAppIcon ? 'Yükleniyor...' : 'Simge görseli seçin (PNG veya JPG, kare)'}
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"

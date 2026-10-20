@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AppVideo } from '../components/AppVideo';
@@ -20,6 +20,7 @@ export default function WelcomeIntroScreen() {
   const [theme, setTheme] = useState<IntroTheme>('brand');
   const [progress, setProgress] = useState(0);
   const [ready, setReady] = useState(false);
+  const progressRef = useRef(0);
   const palette = getMatrixPalette(theme);
 
   useEffect(() => {
@@ -34,6 +35,27 @@ export default function WelcomeIntroScreen() {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    if (!ready || !videoUrl) return;
+    const started = Date.now();
+    let lastProgress = 0;
+    let lastMove = Date.now();
+    const timer = setInterval(() => {
+      const current = progressRef.current;
+      if (current > lastProgress + 0.005) {
+        lastProgress = current;
+        lastMove = Date.now();
+      }
+      const stalled = Date.now() - lastMove > 8000;
+      const tooLong = Date.now() - started > 45000;
+      if (stalled || tooLong) {
+        clearInterval(timer);
+        fadeThenEnter(360);
+      }
+    }, 500);
+    return () => clearInterval(timer);
+  }, [ready, videoUrl, fadeThenEnter]);
 
   useEffect(() => {
     if (!ready || videoUrl) return;
@@ -56,23 +78,25 @@ export default function WelcomeIntroScreen() {
   return (
     <View style={[styles.container, { backgroundColor: palette.bg }]}>
       <StatusBar style="light" />
+      {!!videoUrl && (
+        <AppVideo
+          uri={videoUrl}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          shouldPlay
+          nativeControls={false}
+          surfaceType="textureView"
+          onProgress={(ratio, remainingMs) => {
+            progressRef.current = ratio;
+            setProgress(ratio);
+            maybeStartEndFade(remainingMs);
+          }}
+          onFinish={() => fadeThenEnter(INTRO_FADE_MS)}
+          onError={() => setVideoUrl('')}
+        />
+      )}
       <Animated.View nativeID="intro-fade-layer" style={[styles.layer, { opacity: contentOpacity }]}>
         {!videoUrl && <MatrixRain theme={theme} eventName={eventName} />}
-        {!!videoUrl && (
-          <AppVideo
-            uri={videoUrl}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            shouldPlay
-            nativeControls={false}
-            onProgress={(ratio, remainingMs) => {
-              setProgress(ratio);
-              maybeStartEndFade(remainingMs);
-            }}
-            onFinish={() => fadeThenEnter(INTRO_FADE_MS)}
-            onError={() => setVideoUrl('')}
-          />
-        )}
         <IntroOverlay
           displayName={displayName}
           eventName={eventName}
