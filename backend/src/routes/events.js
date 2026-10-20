@@ -3,6 +3,7 @@ const { auth } = require('../middleware/auth');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const { sequelize } = require('../database/connection');
+const { participantLimitError } = require('../services/participantLimit');
 
 const router = express.Router();
 
@@ -445,6 +446,15 @@ router.post('/:id/participants/import', auth, async (req, res) => {
           });
           results.updated++;
         } else {
+          const limitError = await participantLimitError(event.id);
+          if (limitError) {
+            results.errors.push({
+              row: rowNumber,
+              email: participantData.email,
+              error: limitError
+            });
+            continue;
+          }
           // Yeni oluştur
           await User.create({
             email: participantData.email,

@@ -13,7 +13,6 @@ const Document = require('./src/models/Document');
 const Note = require('./src/models/Note');
 const Survey = require('./src/models/Survey');
 const Report = require('./src/models/Report');
-const Setting = require('./src/models/Setting');
 const Announcement = require('./src/models/Announcement');
 const bcrypt = require('bcryptjs');
 
@@ -598,69 +597,6 @@ const createDemoData = async () => {
 
     const reports = await Report.bulkCreate(testReports);
     console.log('✅ Test reports created.');
-
-    // 14. Create settings
-    const testSettings = [
-      {
-        key: 'app.name',
-        value: 'Event Week App',
-        description: 'Uygulama adı',
-        type: 'string',
-        category: 'general',
-        isPublic: true,
-        isEditable: true,
-        isRequired: true,
-        group: 'general',
-        order: 1,
-        isActive: true,
-        eventId: null
-      },
-      {
-        key: 'app.version',
-        value: '1.0.0',
-        description: 'Uygulama versiyonu',
-        type: 'string',
-        category: 'general',
-        isPublic: true,
-        isEditable: false,
-        isRequired: true,
-        group: 'general',
-        order: 2,
-        isActive: true,
-        eventId: null
-      },
-      {
-        key: 'notification.email.enabled',
-        value: 'true',
-        description: 'E-posta bildirimleri aktif mi?',
-        type: 'boolean',
-        category: 'notification',
-        isPublic: false,
-        isEditable: true,
-        isRequired: false,
-        group: 'notifications',
-        order: 1,
-        isActive: true,
-        eventId: null
-      },
-      {
-        key: 'event.max_participants',
-        value: '500',
-        description: 'Maksimum katılımcı sayısı',
-        type: 'number',
-        category: 'general',
-        isPublic: true,
-        isEditable: true,
-        isRequired: true,
-        group: 'events',
-        order: 1,
-        isActive: true,
-        eventId: '1'
-      }
-    ];
-
-    const settings = await Setting.bulkCreate(testSettings);
-    console.log('✅ Test settings created.');
 
     // 15. Create transfers
     const testTransfers = [

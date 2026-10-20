@@ -3,6 +3,7 @@ const { auth } = require('../middleware/auth');
 const Setting = require('../models/Setting');
 const Event = require('../models/Event');
 const User = require('../models/User');
+const { readFeatures } = require('../services/featureSettings');
 
 const router = express.Router();
 
@@ -251,6 +252,21 @@ router.put('/app-intro-video', auth, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Giriş videosu güncellenirken bir hata oluştu'
+    });
+  }
+});
+
+router.get('/public/features', async (req, res) => {
+  try {
+    const features = await readFeatures();
+    res.json({ success: true, ...features });
+  } catch (error) {
+    console.error('Get public features error:', error);
+    res.json({
+      success: true,
+      postsEnabled: true,
+      storiesEnabled: true,
+      commentsEnabled: true
     });
   }
 });

@@ -5,6 +5,7 @@ const { auth } = require('../middleware/auth');
 const User = require('../models/User');
 const Event = require('../models/Event');
 const { sequelize } = require('../database/connection');
+const { participantLimitError } = require('../services/participantLimit');
 const { QueryTypes } = require('sequelize');
 
 const getPhoneVariants = (phoneNumber) => {
@@ -169,6 +170,14 @@ router.post('/', auth, async (req, res) => {
       });
     }
 
+    const nextRole = role || 'participant';
+    if (nextRole === 'participant' && eventId) {
+      const limitError = await participantLimitError(eventId);
+      if (limitError) {
+        return res.status(400).json({ success: false, error: limitError });
+      }
+    }
+
     // Create user
     const userData = {
       firstName,
@@ -322,6 +331,11 @@ router.post('/register-mobile', async (req, res) => {
         success: false,
         error: 'Etkinlik bulunamadı'
       });
+    }
+
+    const limitError = await participantLimitError(eventId);
+    if (limitError) {
+      return res.status(400).json({ success: false, error: limitError });
     }
 
     // Aynı telefon numarası ile kayıtlı kullanıcı var mı kontrol et

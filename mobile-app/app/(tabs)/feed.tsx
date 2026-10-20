@@ -108,6 +108,7 @@ export default function FeedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [eventId, setEventId] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [features, setFeatures] = useState({ postsEnabled: true, storiesEnabled: true, commentsEnabled: true });
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerKind, setComposerKind] = useState<FeedKind>('post');
   const [caption, setCaption] = useState('');
@@ -151,9 +152,13 @@ export default function FeedScreen() {
     }
 
     try {
-      const data = await apiService.getFeed(scopedEventId || eventId || undefined);
+      const [data, appFeatures] = await Promise.all([
+        apiService.getFeed(scopedEventId || eventId || undefined),
+        apiService.getPublicFeatures(),
+      ]);
       setStories(data.stories || []);
       setPosts(data.posts || []);
+      setFeatures(appFeatures);
     } catch (error: any) {
       if (isAuthError(error)) {
         await leaveToLogin();
@@ -462,9 +467,11 @@ export default function FeedScreen() {
     <SafeAreaView edges={[]} style={[styles.container, { backgroundColor }]}>
       <AppTopBar
         rightExtra={
-          <TouchableOpacity onPress={() => setComposerOpen(true)} accessibilityLabel="Paylaş">
-            <Ionicons name="add-outline" size={28} color={primaryColor} />
-          </TouchableOpacity>
+          features.postsEnabled ? (
+            <TouchableOpacity onPress={() => { setComposerKind('post'); setComposerOpen(true); }} accessibilityLabel="Paylaş">
+              <Ionicons name="add-outline" size={28} color={primaryColor} />
+            </TouchableOpacity>
+          ) : null
         }
       />
 
@@ -479,7 +486,9 @@ export default function FeedScreen() {
           renderItem={renderPost}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchFeed(); }} />}
           ListHeaderComponent={
+            !features.storiesEnabled && storyGroups.length === 0 ? null : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storyRow}>
+              {features.storiesEnabled ? (
               <TouchableOpacity style={styles.storyItem} onPress={() => { setComposerKind('story'); setComposerOpen(true); }}>
                 <View style={[styles.storyRing, { borderColor: primaryColor }]}>
                   <View style={[styles.storyInner, { backgroundColor: cardBackground }]}>
@@ -488,6 +497,7 @@ export default function FeedScreen() {
                 </View>
                 <Text style={[styles.storyName, { color: textSecondary }]} numberOfLines={1}>Story</Text>
               </TouchableOpacity>
+              ) : null}
               {storyGroups.map((group, index) => {
                 const startIndex = storyGroups.slice(0, index).reduce((sum, g) => sum + g.items.length, 0);
                 return (
@@ -508,11 +518,14 @@ export default function FeedScreen() {
                 );
               })}
             </ScrollView>
+            )
           }
           ListEmptyComponent={
             <View style={styles.center}>
               <Text style={{ color: textSecondary, textAlign: 'center', paddingHorizontal: 24 }}>
-                Bu etkinlikte henüz post yok. İlk paylaşımı sen yap.
+                {features.postsEnabled
+                  ? 'Bu etkinlikte henüz post yok. İlk paylaşımı sen yap.'
+                  : 'Bu etkinlikte henüz post yok.'}
               </Text>
             </View>
           }
@@ -617,9 +630,10 @@ export default function FeedScreen() {
                   <Text style={{ color: textColor }}>{item.text}</Text>
                 </View>
               )}
-              ListEmptyComponent={<Text style={{ color: textSecondary }}>İlk yorumu yaz.</Text>}
+              ListEmptyComponent={<Text style={{ color: textSecondary }}>{features.commentsEnabled ? 'İlk yorumu yaz.' : 'Yorum yok.'}</Text>}
             />
           )}
+          {features.commentsEnabled ? (
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={[styles.commentBar, { borderColor }]}>
               <TextInput
@@ -634,6 +648,9 @@ export default function FeedScreen() {
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
+          ) : (
+            <Text style={{ color: textSecondary, textAlign: 'center', padding: 16 }}>Yorumlar kapalı.</Text>
+          )}
         </SafeAreaView>
       </Modal>
 
@@ -642,7 +659,9 @@ export default function FeedScreen() {
           <Header title="Paylaş" onBackPress={() => setComposerOpen(false)} />
           <ScrollView contentContainerStyle={{ padding: 16 }}>
             <View style={styles.kindRow}>
-              {(['post', 'story'] as FeedKind[]).map((kind) => (
+              {(['post', 'story'] as FeedKind[]).filter((kind) => (
+                kind === 'post' ? features.postsEnabled : features.storiesEnabled
+              )).map((kind) => (
                 <TouchableOpacity
                   key={kind}
                   onPress={() => {

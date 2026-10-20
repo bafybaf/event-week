@@ -1120,6 +1120,7 @@ const Events: React.FC = () => {
                       value={newEvent.maxParticipants || ''}
                       onChange={(e) => setNewEvent({...newEvent, maxParticipants: e.target.value ? parseInt(e.target.value) : undefined})}
                     />
+                    <p className="text-xs text-gray-500 mt-1">Doluysa yeni katılımcı eklenmez. Boşsa sınır yoktur.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -1327,6 +1328,7 @@ const Events: React.FC = () => {
                       value={newEvent.maxParticipants || ''}
                       onChange={(e) => setNewEvent({...newEvent, maxParticipants: e.target.value ? parseInt(e.target.value) : undefined})}
                     />
+                    <p className="text-xs text-gray-500 mt-1">Doluysa yeni katılımcı eklenmez. Boşsa sınır yoktur.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

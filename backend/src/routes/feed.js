@@ -10,6 +10,7 @@ const {
   toRelativeUploadUrl,
   normalizeMediaList
 } = require('../services/feedService');
+const { readFeatures } = require('../services/featureSettings');
 
 const router = express.Router();
 
@@ -155,6 +156,14 @@ router.post('/', auth, async (req, res) => {
     if (req.body.kind === 'story') {
       media.splice(1);
     }
+    const features = await readFeatures();
+    if (req.body.kind === 'story' && !features.storiesEnabled) {
+      return res.status(403).json({ success: false, error: 'Hikaye paylaşımı kapalı' });
+    }
+    if (req.body.kind !== 'story' && !features.postsEnabled) {
+      return res.status(403).json({ success: false, error: 'Paylaşım kapalı' });
+    }
+
     const first = media[0] || {};
     const payload = {
       kind: req.body.kind,
@@ -299,6 +308,11 @@ router.post('/:id/comments', auth, async (req, res) => {
     const text = (req.body.text || '').trim();
     if (!text) {
       return res.status(400).json({ success: false, error: 'Yorum boş olamaz' });
+    }
+
+    const features = await readFeatures();
+    if (!features.commentsEnabled) {
+      return res.status(403).json({ success: false, error: 'Yorumlar kapalı' });
     }
 
     const item = await FeedItem.findByPk(req.params.id);

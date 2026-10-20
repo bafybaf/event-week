@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, Settings as SettingsIcon, Save, RefreshCw, Bell, Globe, Shield, Database, Image as ImageIcon, Film } from 'lucide-react';
+import { Edit, Trash2, Eye, Settings as SettingsIcon, Save, RefreshCw, Bell, Globe, Shield, Database, Image as ImageIcon, Film } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { API_ORIGIN, fileUrl } from '../config.ts';
 
@@ -40,6 +40,25 @@ const Settings: React.FC = () => {
   const [introVideoUrl, setIntroVideoUrl] = useState('');
   const [introVideoFileName, setIntroVideoFileName] = useState('');
   const [uploadingIntroVideo, setUploadingIntroVideo] = useState(false);
+  const [savingFeature, setSavingFeature] = useState('');
+
+  const featureControls = [
+    {
+      key: 'feed.posts_enabled',
+      label: 'Akışa paylaşım',
+      hint: 'Kapalıyken telefondan yeni gönderi eklenemez. Eski gönderiler durur.'
+    },
+    {
+      key: 'feed.stories_enabled',
+      label: 'Hikaye',
+      hint: 'Kapalıyken yeni hikaye eklenemez. Yayınlanmış hikayeler görünmeye devam eder.'
+    },
+    {
+      key: 'feed.comments_enabled',
+      label: 'Yorumlar',
+      hint: 'Kapalıyken yeni yorum yazılamaz. Eski yorumlar okunabilir.'
+    }
+  ];
 
   const [newSetting, setNewSetting] = useState({
     key: '',
@@ -546,12 +565,46 @@ const Settings: React.FC = () => {
     }
   };
 
+  const isFeatureOn = (key: string) => {
+    const row = settings.find((setting) => setting.key === key);
+    if (!row) return true;
+    return !['false', '0', 'hayır', 'hayir', 'no', 'off', 'kapalı', 'kapali'].includes(String(row.value).trim().toLowerCase());
+  };
+
+  const saveFeature = async (key: string, enabled: boolean) => {
+    setSavingFeature(key);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ORIGIN}/api/settings/${encodeURIComponent(key)}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ value: enabled ? 'true' : 'false' })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Ayar kaydedilemedi');
+      }
+      setSettings((current) => current.map((setting) => (
+        setting.key === key ? { ...setting, value: enabled ? 'true' : 'false' } : setting
+      )));
+      toast.success(enabled ? 'Açık' : 'Kapalı');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Ayar kaydedilemedi');
+    } finally {
+      setSavingFeature('');
+    }
+  };
+
   const filteredSettings = settings.filter(setting => {
     if (
       setting.key === 'app_logo' ||
       setting.key === 'app_launcher_icon' ||
       setting.key === 'app_intro_video' ||
-      setting.key === 'app_intro_video_file_name'
+      setting.key === 'app_intro_video_file_name' ||
+      featureControls.some((feature) => feature.key === setting.key)
     ) return false;
     const matchesSearch = setting.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          setting.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -580,13 +633,6 @@ const Settings: React.FC = () => {
           >
             <RefreshCw className="w-5 h-5" />
             Yenile
-          </button>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Yeni Ayar
           </button>
         </div>
       </div>
@@ -710,11 +756,40 @@ const Settings: React.FC = () => {
         )}
       </div>
 
+      <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <h2 className="text-lg font-semibold text-gray-900">Akış ve kayıt</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Bu anahtarlar telefon uygulamasında hemen geçerli olur. Katılımcı üst sınırı burada değil,
+          Etkinlikler sayfasındaki maksimum katılımcı alanındadır. Sayı dolunca yeni katılımcı eklenmez.
+        </p>
+        <div className="divide-y">
+          {featureControls.map((feature) => {
+            const enabled = isFeatureOn(feature.key);
+            return (
+              <div key={feature.key} className="flex items-center justify-between gap-4 py-3">
+                <div>
+                  <div className="text-sm font-medium text-gray-900">{feature.label}</div>
+                  <div className="text-sm text-gray-500">{feature.hint}</div>
+                </div>
+                <button
+                  type="button"
+                  disabled={savingFeature === feature.key}
+                  onClick={() => saveFeature(feature.key, !enabled)}
+                  className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium ${enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}
+                >
+                  {savingFeature === feature.key ? '...' : enabled ? 'Açık' : 'Kapalı'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
-      ) : (
+      ) : filteredSettings.length > 0 ? (
         <>
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -855,7 +930,7 @@ const Settings: React.FC = () => {
         </div>
       </div>
         </>
-      )}
+      ) : null}
 
       {/* Add/Edit Modal */}
       {showModal && (

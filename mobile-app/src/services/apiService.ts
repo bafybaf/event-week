@@ -347,6 +347,20 @@ class ApiService {
     return response?.introVideoUrl || null;
   }
 
+  async getPublicFeatures() {
+    const fallback = { postsEnabled: true, storiesEnabled: true, commentsEnabled: true };
+    try {
+      const response = await this.get<any>('/settings/public/features');
+      return {
+        postsEnabled: response?.postsEnabled !== false,
+        storiesEnabled: response?.storiesEnabled !== false,
+        commentsEnabled: response?.commentsEnabled !== false,
+      };
+    } catch {
+      return fallback;
+    }
+  }
+
   // Users API
   async getUsers() {
     const response = await this.get<any>('/users');
