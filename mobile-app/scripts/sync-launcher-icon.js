@@ -20,9 +20,16 @@ function toAbsolute(url, origin) {
   return `${origin}/${value.replace(/^\//, '')}`;
 }
 
+function loadSharp() {
+  try {
+    return require('sharp');
+  } catch (error) {
+    return require(path.join(__dirname, '..', '..', 'backend', 'node_modules', 'sharp'));
+  }
+}
+
 async function writeIcon(buffer, filePath) {
-  const sharpPath = path.join(__dirname, '..', '..', 'backend', 'node_modules', 'sharp');
-  const sharp = require(sharpPath);
+  const sharp = loadSharp();
   const size = 1024;
   // Android yuvarlak ve adaptive maskesi dış yüzde 18'i keser. Görsel ortaya sığsın.
   const inner = Math.round(size * 0.62);
@@ -44,17 +51,39 @@ async function writeIcon(buffer, filePath) {
     .toFile(filePath);
 }
 
+async function syncAppName(origin) {
+  const response = await fetch(`${origin}/api/settings/public/app-name`);
+  if (!response.ok) {
+    console.log('Uygulama başlığı uç noktası yok, app.json adı korunuyor.');
+    return;
+  }
+  const data = await response.json();
+  const name = String(data.appName || '').trim().slice(0, 30);
+  if (!name) return;
+  const appJsonPath = path.join(__dirname, '..', 'app.json');
+  const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
+  appJson.expo.name = name;
+  fs.writeFileSync(appJsonPath, `${JSON.stringify(appJson, null, 2)}\n`);
+  console.log(`Uygulama başlığı derlemeye yazıldı: ${name}`);
+}
+
 async function main() {
   const origin = resolveOrigin();
   const assetsDir = path.join(__dirname, '..', 'assets');
   fs.mkdirSync(assetsDir, { recursive: true });
 
   try {
+    await syncAppName(origin);
+  } catch (error) {
+    console.warn('Uygulama başlığı senkronu atlandı:', error.message);
+  }
+
+  try {
     const iconResponse = await fetch(`${origin}/api/settings/public/app-icon`);
     const iconData = await iconResponse.json();
     const remoteUrl = toAbsolute(iconData.appIcon, origin);
     if (!remoteUrl) {
-      console.log('Launcher icon: Ayarlar > Uygulama simgesi boş. Geniş logo simge olarak kullanılmaz.');
+      console.log('Uygulama simgesi boş. Logo kullanılmadı, mevcut simge korunuyor.');
       return;
     }
 

@@ -42,6 +42,45 @@ const RaffleStage: React.FC = () => {
     load();
   }, [eventId]);
 
+  useEffect(() => {
+    return () => {
+      if (eventId) {
+        raffleApi.closeLive(eventId).catch(() => {});
+      }
+    };
+  }, [eventId]);
+
+  useEffect(() => {
+    if (!eventId || loading || spinning) return;
+    const livePhase = revealed && winner ? 'revealed' : phase;
+    raffleApi.publishLive({
+      eventId,
+      phase: livePhase,
+      participantCount: participants.length,
+      eventName,
+      highlightName: '',
+      winner: revealed && winner
+        ? { name: winner.name, company: winner.company, title: winner.title }
+        : null
+    }).catch(() => {});
+  }, [eventId, loading, phase, revealed, winner, participants.length, spinning, eventName]);
+
+  useEffect(() => {
+    if (!eventId || !spinning || phase !== 'draw') return;
+    const person = participants[displayIndex];
+    const timer = window.setTimeout(() => {
+      raffleApi.publishLive({
+        eventId,
+        phase: 'spinning',
+        highlightName: person?.name || '',
+        highlightCompany: person?.company || '',
+        participantCount: participants.length,
+        eventName
+      }).catch(() => {});
+    }, 140);
+    return () => window.clearTimeout(timer);
+  }, [displayIndex, spinning, phase, eventId, participants, eventName]);
+
   const goToRoster = () => {
     if (spinning) return;
     setPhase('roster');

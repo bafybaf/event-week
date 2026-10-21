@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../src/services/authService';
 import notificationService from '../src/services/notificationService';
 import { mapEventFromApi, mapUserFromApi, loadAppLogo } from '../src/utils/eventStorage';
+import { apiService } from '../src/services/apiService';
 import { clearSession, hasValidSession, isJwtExpired } from '../src/utils/session';
 import { EventLogo, pickEventLogoUri } from '../components/EventLogo';
 import { useTheme } from '../contexts/ThemeContext';
@@ -25,6 +26,7 @@ export default function WelcomeScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [matchedEvent, setMatchedEvent] = useState<any>(null);
   const [appLogo, setAppLogo] = useState<string | null>(null);
+  const [appTitle, setAppTitle] = useState('Event Week');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const redirectIfLoggedIn = async () => {
@@ -53,6 +55,7 @@ export default function WelcomeScreen() {
         skipCheckRef.current = true;
         setLoading(false);
         loadAppLogo().then(setAppLogo);
+        apiService.getPublicAppName().then(setAppTitle);
       };
 
       checkAndReset();
@@ -194,7 +197,7 @@ export default function WelcomeScreen() {
   };
 
   const displayLogo = pickEventLogoUri(matchedEvent) || appLogo;
-  const displayName = matchedEvent?.name || '';
+  const displayName = matchedEvent?.name || appTitle;
 
   if (loading) {
     return (

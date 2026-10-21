@@ -3,11 +3,11 @@ import { router, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useThemeColor } from '../hooks/use-theme-color';
-import { logoutAndReset } from '../src/utils/logout';
-import { Header } from '../components/Header';
-import { Screen } from '../components/Screen';
-import { Fonts } from '../constants/fonts';
+import { useThemeColor } from '../../hooks/use-theme-color';
+import { logoutAndReset } from '../../src/utils/logout';
+import { Header } from '../../components/Header';
+import { Screen } from '../../components/Screen';
+import { Fonts } from '../../constants/fonts';
 
 interface Event {
   id: string;
@@ -172,7 +172,7 @@ export default function MenuScreen() {
     if (!currentEvent) return [];
 
     const baseItems: { title: string; icon: keyof typeof Ionicons.glyphMap; route: string; available: boolean }[] = [
-      { title: 'Program', icon: 'calendar-outline', route: '/program', available: true },
+      { title: 'Program', icon: 'calendar-outline', route: '/(tabs)/program', available: true },
       { title: 'Konuşmacılar', icon: 'mic-outline', route: '/speakers', available: true },
       { title: 'Duyurular', icon: 'notifications-outline', route: '/announcements', available: true },
       { title: 'Galeri', icon: 'images-outline', route: '/gallery', available: true },
@@ -182,6 +182,7 @@ export default function MenuScreen() {
       { title: 'Dokümanlar', icon: 'documents-outline', route: '/documents', available: true },
       { title: 'Notlar', icon: 'create-outline', route: '/notes', available: true },
       { title: 'Canlı Quiz', icon: 'flash-outline', route: '/quiz', available: true },
+      { title: 'Çekiliş', icon: 'gift-outline', route: '/raffle', available: true },
       { title: 'Anketler', icon: 'stats-chart-outline', route: '/surveys', available: true },
       { title: 'Oylama', icon: 'checkbox-outline', route: '/voting', available: true },
       { title: 'Randevular', icon: 'today-outline', route: '/appointments', available: true },

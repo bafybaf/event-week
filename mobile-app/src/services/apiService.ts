@@ -337,6 +337,20 @@ class ApiService {
     return response.events || response;
   }
 
+  async getPublicAppName() {
+    try {
+      const response = await this.get<any>('/settings/public/app-name');
+      return String(response?.appName || '').trim() || 'Event Week';
+    } catch {
+      return 'Event Week';
+    }
+  }
+
+  async getMyStats() {
+    const response = await this.get<any>('/users/me/stats');
+    return response?.stats || null;
+  }
+
   async getPublicAppLogo() {
     const response = await this.get<any>('/settings/public/app-logo');
     return response?.appLogo || null;
@@ -544,6 +558,10 @@ class ApiService {
   async updateSupportTicketStatus(id: string, status: 'open' | 'closed') {
     const response = await this.put<any>(`/support/tickets/${id}/status`, { status });
     return response.ticket || response;
+  }
+
+  async getRaffleWatch() {
+    return this.get<any>('/raffle/watch');
   }
 
   async getLiveQuiz(eventId?: string | number) {

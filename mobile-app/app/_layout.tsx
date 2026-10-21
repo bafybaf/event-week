@@ -113,13 +113,6 @@ function StackNavigator() {
         }} 
       />
       <Stack.Screen 
-        name="menu" 
-        options={{ 
-          headerShown: false,
-          animation: 'slide_from_right',
-        }} 
-      />
-      <Stack.Screen 
         name="gallery" 
         options={{ 
           headerShown: false 
@@ -241,6 +234,12 @@ function StackNavigator() {
       />
       <Stack.Screen
         name="quiz"
+        options={{
+          headerShown: false
+        }}
+      />
+      <Stack.Screen
+        name="raffle"
         options={{
           headerShown: false
         }}

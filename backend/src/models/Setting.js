@@ -244,5 +244,29 @@ Setting.ensureAppIntroVideo = async function () {
   }
 };
 
+Setting.ensureAppDisplayName = async function () {
+  try {
+    await Setting.sync();
+    const existing = await Setting.findOne({ where: { key: 'app.display_name' } });
+    if (existing) return;
+    await Setting.create({
+      key: 'app.display_name',
+      value: 'Event Week',
+      type: 'string',
+      category: 'appearance',
+      description: 'Telefon ana ekranındaki uygulama başlığı',
+      isPublic: true,
+      isEditable: true,
+      isRequired: false,
+      eventId: null,
+      group: 'branding',
+      order: 4,
+      isActive: true
+    });
+  } catch (error) {
+    console.warn('App display name setting ensure:', error.message);
+  }
+};
+
 module.exports = Setting;
 

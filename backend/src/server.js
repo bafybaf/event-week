@@ -260,6 +260,7 @@ const startServer = async () => {
     await models.Setting.ensureAppLogo();
     await models.Setting.ensureAppIntroVideo();
     await models.Setting.ensureAppLauncherIcon();
+    await models.Setting.ensureAppDisplayName();
     const { ensureFeatureSettings } = require('./services/featureSettings');
     await ensureFeatureSettings();
     await models.FeedItem.sync();

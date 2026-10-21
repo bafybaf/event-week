@@ -8,6 +8,7 @@ const { readFeatures } = require('../services/featureSettings');
 const router = express.Router();
 
 const APP_LOGO_KEY = 'app_logo';
+const APP_NAME_KEY = 'app.display_name';
 const APP_LAUNCHER_ICON_KEY = 'app_launcher_icon';
 const APP_INTRO_VIDEO_KEY = 'app_intro_video';
 const APP_INTRO_VIDEO_NAME_KEY = 'app_intro_video_file_name';
@@ -64,6 +65,56 @@ const readAppIntroVideo = async () => {
 // @route   GET /api/settings/public/app-logo
 // @desc    Public app logo for mobile login
 // @access  Public
+router.get('/public/app-name', async (req, res) => {
+  try {
+    const setting = await Setting.findOne({ where: { key: APP_NAME_KEY } });
+    res.json({
+      success: true,
+      appName: (setting?.value || '').trim() || 'Event Week'
+    });
+  } catch (error) {
+    console.error('Get public app name error:', error);
+    res.json({ success: true, appName: 'Event Week' });
+  }
+});
+
+router.get('/app-name', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
+      return res.status(403).json({ success: false, error: 'Access denied. Admin or organizer role required.' });
+    }
+    const setting = await Setting.findOne({ where: { key: APP_NAME_KEY } });
+    res.json({
+      success: true,
+      appName: (setting?.value || '').trim() || 'Event Week'
+    });
+  } catch (error) {
+    console.error('Get app name error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+router.put('/app-name', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
+      return res.status(403).json({ success: false, error: 'Access denied. Admin or organizer role required.' });
+    }
+    const appName = String(req.body.appName || '').trim().slice(0, 30);
+    if (!appName) {
+      return res.status(400).json({ success: false, error: 'Uygulama başlığı boş olamaz' });
+    }
+    const setting = await upsertSetting(APP_NAME_KEY, appName, 'Telefon ana ekranındaki uygulama başlığı', 4);
+    res.json({
+      success: true,
+      appName: setting.value,
+      message: 'Uygulama başlığı kaydedildi. Ana ekran adı yeni APK ile değişir.'
+    });
+  } catch (error) {
+    console.error('Update app name error:', error);
+    res.status(500).json({ success: false, error: 'Uygulama başlığı güncellenirken bir hata oluştu' });
+  }
+});
+
 router.get('/public/app-logo', async (req, res) => {
   try {
     const setting = await Setting.findOne({ where: { key: APP_LOGO_KEY } });

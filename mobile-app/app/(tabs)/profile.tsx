@@ -153,19 +153,48 @@ export default function ProfileScreen() {
 
   const loadStats = async () => {
     try {
-      // TODO: Implement real stats from API
-      // For now, we'll count from AsyncStorage or calculate from API
-      const selectedEvent = await AsyncStorage.getItem('selectedEvent');
-      if (selectedEvent) {
-        // Load real stats from backend
-        // This is a placeholder - implement actual API calls
-        setStats({
-          sessions: 0,
-          appointments: 0,
-          votes: 0,
-          activities: 0,
-        });
+      const [selectedEvent, currentUser] = await Promise.all([
+        AsyncStorage.getItem('selectedEvent'),
+        AsyncStorage.getItem('currentUser'),
+      ]);
+      const eventId = selectedEvent ? JSON.parse(selectedEvent)?.id : undefined;
+      const userId = currentUser ? JSON.parse(currentUser)?.id : undefined;
+      if (!eventId || !userId) return;
+
+      try {
+        const remote = await apiService.getMyStats();
+        if (remote) {
+          setStats({
+            sessions: Number(remote.sessions) || 0,
+            appointments: Number(remote.appointments) || 0,
+            votes: Number(remote.votes) || 0,
+            activities: Number(remote.activities) || 0,
+          });
+          return;
+        }
+      } catch (error) {
+        console.warn('Stats endpoint unavailable, counting lists:', error);
       }
+
+      const [programs, appointments, votes, activities] = await Promise.all([
+        apiService.getPrograms(eventId).catch(() => []),
+        apiService.getAppointments(eventId).catch(() => []),
+        apiService.getVotes(undefined, userId).catch(() => []),
+        apiService.getActivities(eventId).catch(() => []),
+      ]);
+      const sessionTypes = new Set(['session', 'presentation', 'workshop']);
+      const programList = Array.isArray(programs) ? programs : [];
+      const appointmentList = Array.isArray(appointments) ? appointments : [];
+      setStats({
+        sessions: programList.filter((item) => sessionTypes.has(item.type) && item.status !== 'cancelled').length,
+        appointments: appointmentList.filter((item) => (
+          item.status !== 'cancelled'
+          && item.status !== 'rejected'
+          && (String(item.requesterId) === String(userId) || String(item.requestedUserId) === String(userId))
+        )).length,
+        votes: Array.isArray(votes) ? votes.length : 0,
+        activities: (Array.isArray(activities) ? activities : []).filter((item) => item.isActive !== false).length,
+      });
     } catch (error) {
       console.error('Error loading stats:', error);
     }
@@ -393,7 +422,7 @@ export default function ProfileScreen() {
         <View style={styles.statsGrid}>
           <View style={[styles.statItem, { backgroundColor: backgroundColor }]}>
             <Text style={[styles.statNumber, { color: primaryColor }]}>{stats.sessions}</Text>
-            <Text style={[styles.statLabel, { color: textSecondary }]}>Katıldığım Oturum</Text>
+            <Text style={[styles.statLabel, { color: textSecondary }]}>Oturum</Text>
           </View>
           <View style={[styles.statItem, { backgroundColor: backgroundColor }]}>
             <Text style={[styles.statNumber, { color: primaryColor }]}>{stats.appointments}</Text>

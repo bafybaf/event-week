@@ -40,6 +40,11 @@ export function ZoomableImage({ uri }: { uri: string }) {
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(2)
+    .manualActivation(true)
+    .onTouchesMove((_event, state) => {
+      if (scale.value > 1.01) state.activate();
+      else state.fail();
+    })
     .onUpdate((event) => {
       if (scale.value <= 1) return;
       translateX.value = savedX.value + event.translationX;

@@ -116,6 +116,8 @@ export default function FeedScreen() {
   const [cropSource, setCropSource] = useState<{ uri: string; width: number; height: number; name: string } | null>(null);
   const [viewerItem, setViewerItem] = useState<FeedItem | null>(null);
   const [viewerIndex, setViewerIndex] = useState(0);
+  const [viewerPageWidth, setViewerPageWidth] = useState(Dimensions.get('window').width);
+  const [viewerPageHeight, setViewerPageHeight] = useState(Dimensions.get('window').height * 0.72);
   const [saving, setSaving] = useState(false);
   const [storyIndex, setStoryIndex] = useState(-1);
   const [commentItem, setCommentItem] = useState<FeedItem | null>(null);
@@ -213,7 +215,27 @@ export default function FeedScreen() {
   }, [stories]);
 
   const flatStories = storyGroups.flatMap((group) => group.items);
+  const storyCountRef = useRef(0);
+  storyCountRef.current = flatStories.length;
   const activeStory = storyIndex >= 0 ? flatStories[storyIndex] : null;
+  const activeGroup = storyGroups.find((group) => group.items.some((item) => item.id === activeStory?.id));
+  const indexInGroup = activeGroup ? activeGroup.items.findIndex((item) => item.id === activeStory?.id) : 0;
+
+  const stepStory = (direction: 1 | -1) => {
+    setStoryIndex((current) => {
+      if (current < 0) return -1;
+      const next = current + direction;
+      if (next < 0) return 0;
+      if (next >= storyCountRef.current) return -1;
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!activeStory || activeStory.mediaType === 'video') return undefined;
+    const timer = setTimeout(() => stepStory(1), 5000);
+    return () => clearTimeout(timer);
+  }, [activeStory?.id, activeStory?.mediaType]);
 
   const appendPicked = (items: { uri: string; type: MediaType; name: string }[]) => {
     setPickedList((prev) => {
@@ -537,44 +559,57 @@ export default function FeedScreen() {
         <View style={styles.storyViewer}>
           {activeStory && (
             <>
-              {activeStory.mediaType === 'video' ? (
-                <AppVideo
-                  uri={fixImageUrl(activeStory.mediaUrl) || ''}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="contain"
-                  shouldPlay
-                />
-              ) : (
-                <Image
-                  source={{ uri: fixImageUrl(activeStory.mediaUrl) || '' }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="contain"
-                />
-              )}
-              <SafeAreaView style={styles.storyOverlay}>
-                <View style={styles.storyTop}>
-                  <Text style={styles.storyViewerName}>{displayName(activeStory.author)}</Text>
-                  <TouchableOpacity onPress={() => setStoryIndex(-1)}>
-                    <Ionicons name="close" size={28} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.storyNav}>
-                  <TouchableOpacity style={styles.storyNavHit} onPress={() => setStoryIndex((i) => Math.max(0, i - 1))} />
-                  <TouchableOpacity
-                    style={styles.storyNavHit}
-                    onPress={() => setStoryIndex((i) => (i + 1 >= flatStories.length ? -1 : i + 1))}
+              <View style={styles.storyStage} pointerEvents="none">
+                {activeStory.mediaType === 'video' ? (
+                  <AppVideo
+                    key={activeStory.id}
+                    uri={fixImageUrl(activeStory.mediaUrl) || ''}
+                    style={styles.storyMedia}
+                    contentFit="contain"
+                    surfaceType="textureView"
+                    nativeControls={false}
+                    shouldPlay
+                    onFinish={() => stepStory(1)}
                   />
+                ) : (
+                  <Image
+                    key={activeStory.id}
+                    source={{ uri: fixImageUrl(activeStory.mediaUrl) || '' }}
+                    style={styles.storyMedia}
+                    contentFit="contain"
+                  />
+                )}
+              </View>
+              <Pressable style={styles.storyHitLeft} onPress={() => stepStory(-1)} accessibilityLabel="Önceki hikaye" />
+              <Pressable style={styles.storyHitRight} onPress={() => stepStory(1)} accessibilityLabel="Sonraki hikaye" />
+              <SafeAreaView style={styles.storyChrome} pointerEvents="box-none">
+                <View pointerEvents="none">
+                  <View style={styles.storyBars}>
+                    {(activeGroup?.items || [activeStory]).map((item, index) => (
+                      <View key={item.id} style={styles.storyBarTrack}>
+                        <View style={[styles.storyBarFill, { width: index <= indexInGroup ? '100%' : '0%' }]} />
+                      </View>
+                    ))}
+                  </View>
+                  <View style={styles.storyTop}>
+                    <Text style={styles.storyViewerName}>{displayName(activeStory.author)}</Text>
+                  </View>
                 </View>
-                <View style={styles.storyBottom}>
+                <View style={styles.storyBottom} pointerEvents="box-none">
                   {!!activeStory.caption && <Text style={styles.storyCaption}>{activeStory.caption}</Text>}
-                  <TouchableOpacity onPress={() => toggleLike(activeStory, true)} style={styles.actionBtn}>
-                    <Ionicons
-                      name={activeStory.likedByMe ? 'heart' : 'heart-outline'}
-                      size={28}
-                      color={activeStory.likedByMe ? '#ef4444' : '#fff'}
-                    />
-                    <Text style={styles.storyLikeCount}>{activeStory.likeCount || 0}</Text>
-                  </TouchableOpacity>
+                  <View style={styles.storyActions}>
+                    <TouchableOpacity onPress={() => toggleLike(activeStory, true)} style={styles.actionBtn}>
+                      <Ionicons
+                        name={activeStory.likedByMe ? 'heart' : 'heart-outline'}
+                        size={28}
+                        color={activeStory.likedByMe ? '#ef4444' : '#fff'}
+                      />
+                      <Text style={styles.storyLikeCount}>{activeStory.likeCount || 0}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setStoryIndex(-1)} accessibilityLabel="Kapat">
+                      <Ionicons name="close" size={28} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </SafeAreaView>
             </>
@@ -762,38 +797,52 @@ export default function FeedScreen() {
               </Text>
             )}
             {viewerItem && (
-              <FlatList
-                data={slidesFor(viewerItem)}
-                horizontal
-                pagingEnabled
-                initialScrollIndex={Math.min(viewerIndex, Math.max(slidesFor(viewerItem).length - 1, 0))}
-                getItemLayout={(_, index) => ({
-                  length: Dimensions.get('window').width,
-                  offset: Dimensions.get('window').width * index,
-                  index,
-                })}
-                keyExtractor={(_, index) => `${viewerItem.id}-${index}`}
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(event) => {
-                  const width = Dimensions.get('window').width;
-                  setViewerIndex(Math.round(event.nativeEvent.contentOffset.x / Math.max(width, 1)));
+              <View
+                style={styles.viewerPager}
+                onLayout={(event) => {
+                  const nextWidth = event.nativeEvent.layout.width;
+                  const nextHeight = event.nativeEvent.layout.height;
+                  if (nextWidth > 0) setViewerPageWidth(nextWidth);
+                  if (nextHeight > 0) setViewerPageHeight(nextHeight);
                 }}
-                renderItem={({ item: slide, index }) => (
-                  <View style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.72 }}>
-                    {slide.type === 'video' ? (
-                      <AppVideo
-                        uri={slide.url}
-                        style={{ flex: 1 }}
-                        contentFit="contain"
-                        shouldPlay={index === viewerIndex}
-                      />
-                    ) : (
-                      <ZoomableImage key={`${viewerItem.id}-${index}-${slide.url}`} uri={slide.url} />
-                    )}
-                  </View>
-                )}
-                style={{ flex: 1 }}
-              />
+              >
+                <FlatList
+                  data={slidesFor(viewerItem)}
+                  horizontal
+                  pagingEnabled
+                  initialScrollIndex={Math.min(viewerIndex, Math.max(slidesFor(viewerItem).length - 1, 0))}
+                  getItemLayout={(_, index) => ({
+                    length: viewerPageWidth,
+                    offset: viewerPageWidth * index,
+                    index,
+                  })}
+                  keyExtractor={(_, index) => `${viewerItem.id}-${index}`}
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={(event) => {
+                    const next = Math.round(event.nativeEvent.contentOffset.x / Math.max(viewerPageWidth, 1));
+                    const last = slidesFor(viewerItem).length - 1;
+                    const clamped = Math.min(Math.max(next, 0), Math.max(last, 0));
+                    setViewerIndex((current) => (current === clamped ? current : clamped));
+                  }}
+                  scrollEventThrottle={16}
+                  renderItem={({ item: slide, index }) => (
+                    <View style={{ width: viewerPageWidth, height: viewerPageHeight, alignItems: 'center', justifyContent: 'center' }}>
+                      {slide.type === 'video' ? (
+                        <AppVideo
+                          uri={slide.url}
+                          style={{ width: viewerPageWidth, height: viewerPageHeight }}
+                          contentFit="contain"
+                          surfaceType="textureView"
+                          shouldPlay={index === viewerIndex}
+                        />
+                      ) : (
+                        <ZoomableImage key={`${viewerItem.id}-${index}-${slide.url}`} uri={slide.url} />
+                      )}
+                    </View>
+                  )}
+                  style={{ flex: 1 }}
+                />
+              </View>
             )}
           </SafeAreaView>
         </GestureHandlerRootView>
@@ -863,11 +912,26 @@ const styles = StyleSheet.create({
   caption: { paddingHorizontal: 12, paddingVertical: 10, lineHeight: 20 },
   captionName: { fontWeight: '700' },
   storyViewer: { flex: 1, backgroundColor: '#000' },
-  storyOverlay: { flex: 1, justifyContent: 'space-between' },
-  storyTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
+  storyStage: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storyMedia: { width: '100%', height: '100%' },
+  viewerPager: { flex: 1, width: '100%' },
+  storyChrome: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 4,
+    justifyContent: 'space-between',
+  },
+  storyHitLeft: { position: 'absolute', left: 0, top: 0, bottom: 0, width: '40%', zIndex: 3 },
+  storyHitRight: { position: 'absolute', right: 0, top: 0, bottom: 0, width: '60%', zIndex: 3 },
+  storyBars: { flexDirection: 'row', gap: 4, paddingHorizontal: 12, paddingTop: 8 },
+  storyBarTrack: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.35)', overflow: 'hidden' },
+  storyBarFill: { height: '100%', backgroundColor: '#fff' },
+  storyTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 10 },
   storyViewerName: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  storyNav: { flex: 1, flexDirection: 'row' },
-  storyNavHit: { flex: 1 },
+  storyActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   storyBottom: { padding: 16, gap: 10 },
   storyCaption: { color: '#fff', fontSize: 15 },
   storyLikeCount: { color: '#fff', fontWeight: '600' },

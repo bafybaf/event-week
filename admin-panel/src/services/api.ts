@@ -596,6 +596,20 @@ export const raffleApi = {
     const response = await api.post('/raffle/draw', { eventId });
     return response.data.state;
   },
+  publishLive: async (payload: {
+    eventId: string;
+    phase: 'roster' | 'draw' | 'spinning' | 'revealed';
+    highlightName?: string;
+    highlightCompany?: string;
+    participantCount?: number;
+    eventName?: string;
+    winner?: { name: string; company?: string; title?: string } | null;
+  }) => {
+    await api.put('/raffle/live', payload);
+  },
+  closeLive: async (eventId: string) => {
+    await api.delete('/raffle/live', { params: { eventId } } as any);
+  },
 };
 
 export const feedApi = {

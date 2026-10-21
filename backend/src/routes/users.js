@@ -4,6 +4,11 @@ const { Op } = require('sequelize');
 const { auth } = require('../middleware/auth');
 const User = require('../models/User');
 const Event = require('../models/Event');
+const Appointment = require('../models/Appointment');
+const Voting = require('../models/Voting');
+const ActivityRegistration = require('../models/ActivityRegistration');
+const Program = require('../models/Program');
+const Activity = require('../models/Activity');
 const { sequelize } = require('../database/connection');
 const { participantLimitError } = require('../services/participantLimit');
 const { QueryTypes } = require('sequelize');
@@ -400,6 +405,54 @@ router.post('/register-mobile', async (req, res) => {
       error: 'Sunucu hatası'
     });
   }
+});
+
+router.get('/me/stats', auth, async (req, res) => {
+  const userId = req.user.id;
+  const eventId = req.user.eventId || null;
+  const countOrZero = async (query) => {
+    try {
+      return await query();
+    } catch (error) {
+      console.warn('Profile stat skipped:', error.message);
+      return 0;
+    }
+  };
+
+  const eventFilter = eventId ? { eventId } : {};
+  const [sessions, appointments, votes, activities] = await Promise.all([
+    countOrZero(() => Program.count({
+      where: {
+        ...eventFilter,
+        type: { [Op.in]: ['session', 'presentation', 'workshop'] },
+        status: { [Op.ne]: 'cancelled' }
+      }
+    })),
+    countOrZero(() => Appointment.count({
+      where: {
+        ...eventFilter,
+        status: { [Op.notIn]: ['cancelled', 'rejected'] },
+        [Op.or]: [{ requesterId: userId }, { requestedUserId: userId }]
+      }
+    })),
+    countOrZero(() => Voting.count({ where: { userId } })),
+    countOrZero(async () => {
+      const joined = await ActivityRegistration.count({
+        where: {
+          userId,
+          ...eventFilter,
+          status: { [Op.ne]: 'cancelled' }
+        }
+      });
+      if (joined > 0) return joined;
+      return Activity.count({ where: { ...eventFilter, isActive: { [Op.ne]: false } } });
+    })
+  ]);
+
+  res.json({
+    success: true,
+    stats: { sessions, appointments, votes, activities }
+  });
 });
 
 // @route   GET /api/users/:id

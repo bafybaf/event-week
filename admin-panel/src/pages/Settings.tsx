@@ -35,6 +35,8 @@ const Settings: React.FC = () => {
   const [filterEvent, setFilterEvent] = useState('');
   const [appLogo, setAppLogo] = useState('');
   const [uploadingAppLogo, setUploadingAppLogo] = useState(false);
+  const [appName, setAppName] = useState('Event Week');
+  const [savingAppName, setSavingAppName] = useState(false);
   const [appIcon, setAppIcon] = useState('');
   const [uploadingAppIcon, setUploadingAppIcon] = useState(false);
   const [introVideoUrl, setIntroVideoUrl] = useState('');
@@ -98,6 +100,7 @@ const Settings: React.FC = () => {
     fetchEvents();
     fetchAppLogo();
     fetchAppIcon();
+    fetchAppName();
     fetchIntroVideo();
   }, []);
 
@@ -106,6 +109,50 @@ const Settings: React.FC = () => {
   }, [filterEvent]);
 
   const getLogoHref = fileUrl;
+
+  const fetchAppName = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ORIGIN}/api/settings/app-name`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      setAppName(data.appName || 'Event Week');
+    } catch (error) {
+      console.error('Error fetching app name:', error);
+    }
+  };
+
+  const saveAppName = async () => {
+    const name = appName.trim();
+    if (!name) {
+      toast.error('Uygulama başlığı boş olamaz');
+      return;
+    }
+    setSavingAppName(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ORIGIN}/api/settings/app-name`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ appName: name })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Başlık kaydedilemedi');
+      }
+      setAppName(result.appName || name);
+      toast.success('Başlık kaydedildi. Ana ekranda yeni APK ile görünür.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Başlık kaydedilemedi');
+    } finally {
+      setSavingAppName(false);
+    }
+  };
 
   const fetchAppLogo = async () => {
     try {
@@ -604,7 +651,9 @@ const Settings: React.FC = () => {
       setting.key === 'app_launcher_icon' ||
       setting.key === 'app_intro_video' ||
       setting.key === 'app_intro_video_file_name' ||
-      featureControls.some((feature) => feature.key === setting.key)
+      setting.key === 'app.display_name' ||
+      featureControls.some((feature) => feature.key === setting.key) ||
+      setting.key.startsWith('raffle_live:')
     ) return false;
     const matchesSearch = setting.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          setting.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -627,6 +676,7 @@ const Settings: React.FC = () => {
               fetchSettings();
               fetchAppLogo();
               fetchAppIcon();
+              fetchAppName();
               fetchIntroVideo();
             }}
             className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2"
@@ -640,9 +690,31 @@ const Settings: React.FC = () => {
       <div className="bg-white p-6 rounded-lg shadow mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Uygulama simgesi</h2>
         <p className="text-sm text-gray-500 mb-4">
-          Telefondaki uygulama simgesi buradan gelir. Alttaki geniş uygulama logosu simgeye basılmaz.
-          Kare bir görsel yükleyin; simge üretilirken logo maskenin içine tam sığacak şekilde küçültülür.
-          Yeni APK derlenmeden telefonda değişmez.
+          Telefonun ana ekranındaki ad ve simge buradan gelir. İkisi de yeni APK derlenmeden değişmez.
+        </p>
+        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="app-display-name">
+          Ana ekran adı
+        </label>
+        <div className="flex gap-3 mb-5">
+          <input
+            id="app-display-name"
+            type="text"
+            maxLength={30}
+            value={appName}
+            onChange={(e) => setAppName(e.target.value)}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <button
+            type="button"
+            onClick={saveAppName}
+            disabled={savingAppName}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {savingAppName ? 'Kaydediliyor...' : 'Kaydet'}
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-3">
+          Kare simge görseli. Boş bırakılırsa logo simge olarak kullanılmaz.
         </p>
         {appIcon ? (
           <div className="flex items-center gap-3 rounded-md border bg-gray-50 p-3">

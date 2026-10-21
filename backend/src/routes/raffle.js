@@ -1,5 +1,5 @@
 const express = require('express');
-const { adminAuth } = require('../middleware/auth');
+const { auth, adminAuth } = require('../middleware/auth');
 const raffleService = require('../services/raffleService');
 
 const router = express.Router();
@@ -25,6 +25,36 @@ router.get('/', adminAuth, asyncHandler(async (req, res) => {
   try {
     const state = await raffleService.getState(req.query.eventId || 'all');
     res.json({ success: true, state });
+  } catch (error) {
+    fail(res, error);
+  }
+}));
+
+router.get('/watch', auth, asyncHandler(async (req, res) => {
+  try {
+    const eventId = req.user.eventId || req.query.eventId;
+    const live = await raffleService.getLive(eventId);
+    res.json({ success: true, live });
+  } catch (error) {
+    fail(res, error);
+  }
+}));
+
+router.put('/live', adminAuth, asyncHandler(async (req, res) => {
+  try {
+    const eventId = req.body.eventId || req.query.eventId;
+    const live = await raffleService.publishLive(eventId, req.body);
+    res.json({ success: true, live });
+  } catch (error) {
+    fail(res, error);
+  }
+}));
+
+router.delete('/live', adminAuth, asyncHandler(async (req, res) => {
+  try {
+    const eventId = req.body.eventId || req.query.eventId;
+    const live = await raffleService.closeLive(eventId);
+    res.json({ success: true, live });
   } catch (error) {
     fail(res, error);
   }

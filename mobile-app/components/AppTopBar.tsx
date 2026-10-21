@@ -73,7 +73,7 @@ export function AppTopBar({ rightExtra }: AppTopBarProps) {
         <View style={styles.right}>
           {rightExtra}
           <TouchableOpacity
-            onPress={() => router.push('/menu' as any)}
+            onPress={() => router.push('/(tabs)/menu' as any)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel="Menü"

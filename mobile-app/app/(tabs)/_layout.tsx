@@ -1,7 +1,7 @@
-import { router, Tabs, useFocusEffect } from 'expo-router';
+import { Tabs, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ColorValue, Platform, Pressable, View, StyleSheet } from 'react-native';
+import { ColorValue, Platform, View, StyleSheet } from 'react-native';
 import { useCallback, useRef } from 'react';
 import { Fonts } from '../../constants/fonts';
 import { hasValidSession } from '../../src/utils/session';
@@ -28,7 +28,7 @@ function TabGlyph({
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const hasRedirected = useRef(false);
-  const bottomPad = insets.bottom > 0 ? insets.bottom : Platform.OS === 'android' ? 48 : 12;
+  const bottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 0 : 8);
   const tabBarHeight = 52 + bottomPad;
 
   useFocusEffect(
@@ -107,21 +107,21 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="program"
+        name="menu"
         options={{
           title: 'Menü',
           headerShown: false,
-          tabBarIcon: ({ color }) => (
-            <TabGlyph focused={false} color={color} active="menu" inactive="menu-outline" />
+          tabBarIcon: ({ color, focused }) => (
+            <TabGlyph focused={focused} color={color} active="menu" inactive="menu-outline" />
           ),
-          tabBarButton: ({ ref: _ref, ...props }) => (
-            <Pressable
-              {...props}
-              accessibilityRole="button"
-              accessibilityLabel="Menü"
-              onPress={() => router.push('/menu')}
-            />
-          ),
+        }}
+      />
+      <Tabs.Screen
+        name="program"
+        options={{
+          href: null,
+          title: 'Program',
+          headerShown: false,
         }}
       />
       <Tabs.Screen
