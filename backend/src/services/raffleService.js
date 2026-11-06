@@ -134,8 +134,22 @@ const closedLive = () => ({
   participantCount: 0,
   eventName: '',
   winner: null,
+  names: [],
+  spinStartedAt: null,
+  spinDurationMs: null,
   updatedAt: null
 });
+
+function publicNames(list) {
+  if (!Array.isArray(list)) return null;
+  return list
+    .slice(0, 300)
+    .map((person) => ({
+      name: String(person?.name || '').slice(0, 120),
+      company: String(person?.company || '').slice(0, 120)
+    }))
+    .filter((person) => person.name);
+}
 
 function publicWinner(winner) {
   if (!winner || !winner.name) return null;
@@ -152,13 +166,23 @@ async function publishLive(eventId, body = {}) {
     error.status = 400;
     throw error;
   }
+  const previous = await getLive(eventId);
+  const phase = ['roster', 'draw', 'spinning', 'revealed'].includes(body.phase) ? body.phase : 'roster';
+  const names = publicNames(body.names) || (Array.isArray(previous.names) ? previous.names : []);
   const payload = {
-    phase: ['roster', 'draw', 'spinning', 'revealed'].includes(body.phase) ? body.phase : 'roster',
+    phase,
     highlightName: String(body.highlightName || '').slice(0, 120),
     highlightCompany: String(body.highlightCompany || '').slice(0, 120),
     participantCount: Number(body.participantCount) || 0,
     eventName: String(body.eventName || '').slice(0, 160),
     winner: publicWinner(body.winner),
+    names,
+    spinStartedAt: phase === 'spinning'
+      ? (body.spinStartedAt || previous.spinStartedAt || new Date().toISOString())
+      : null,
+    spinDurationMs: phase === 'spinning'
+      ? (Number(body.spinDurationMs) || previous.spinDurationMs || 5600)
+      : null,
     updatedAt: new Date().toISOString()
   };
   const key = liveKey(eventId);

@@ -24,6 +24,7 @@ const RaffleStage: React.FC = () => {
   const [phase, setPhase] = useState<'roster' | 'draw'>('roster');
   const [loading, setLoading] = useState(true);
   const spinRef = useRef(false);
+  const spinClock = useRef({ startedAt: '', name: '', company: '' });
 
   const load = async () => {
     if (!eventId) return;
@@ -59,27 +60,47 @@ const RaffleStage: React.FC = () => {
       participantCount: participants.length,
       eventName,
       highlightName: '',
+      names: participants.map((person) => ({ name: person.name, company: person.company || '' })),
       winner: revealed && winner
         ? { name: winner.name, company: winner.company, title: winner.title }
         : null
     }).catch(() => {});
   }, [eventId, loading, phase, revealed, winner, participants.length, spinning, eventName]);
 
+  spinClock.current.name = participants[displayIndex]?.name || '';
+  spinClock.current.company = participants[displayIndex]?.company || '';
+
   useEffect(() => {
-    if (!eventId || !spinning || phase !== 'draw') return;
-    const person = participants[displayIndex];
-    const timer = window.setTimeout(() => {
+    if (!eventId || !spinning || phase !== 'draw') {
+      spinClock.current.startedAt = '';
+      return;
+    }
+    if (!spinClock.current.startedAt) {
+      spinClock.current.startedAt = new Date().toISOString();
+    }
+    const startedAt = spinClock.current.startedAt;
+    const count = participants.length;
+    let stopped = false;
+    const send = () => {
+      if (stopped) return;
       raffleApi.publishLive({
         eventId,
         phase: 'spinning',
-        highlightName: person?.name || '',
-        highlightCompany: person?.company || '',
-        participantCount: participants.length,
-        eventName
+        highlightName: spinClock.current.name,
+        highlightCompany: spinClock.current.company,
+        participantCount: count,
+        eventName,
+        spinStartedAt: startedAt,
+        spinDurationMs: 5600
       }).catch(() => {});
-    }, 140);
-    return () => window.clearTimeout(timer);
-  }, [displayIndex, spinning, phase, eventId, participants, eventName]);
+    };
+    send();
+    const timer = window.setInterval(send, 120);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [eventId, spinning, phase, eventName]);
 
   const goToRoster = () => {
     if (spinning) return;

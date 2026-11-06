@@ -375,7 +375,7 @@ const FlightsScreen: React.FC = () => {
         ListEmptyComponent={renderEmptyState}
       />
 
-      <Modal visible={!!selectedFlight} transparent animationType="fade" onRequestClose={closeDetail}>
+      <Modal visible={!!selectedFlight} transparent statusBarTranslucent animationType="fade" onRequestClose={closeDetail}>
         <View style={styles.modalRoot}>
           <Pressable style={styles.modalBackdrop} onPressIn={closeDetail} accessibilityLabel="Kapat" />
           {selectedFlight ? (
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   modalRoot: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -684,6 +684,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     maxHeight: '88%',
+    flexShrink: 1,
     borderRadius: 22,
     borderWidth: 1,
     paddingTop: 10,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Header } from '../components/Header';
@@ -13,6 +13,11 @@ type RaffleWinner = {
   title?: string;
 };
 
+type RafflePerson = {
+  name: string;
+  company?: string;
+};
+
 type RaffleLive = {
   phase: 'closed' | 'roster' | 'draw' | 'spinning' | 'revealed';
   highlightName?: string;
@@ -20,6 +25,9 @@ type RaffleLive = {
   participantCount?: number;
   eventName?: string;
   winner?: RaffleWinner | null;
+  names?: RafflePerson[];
+  spinStartedAt?: string | null;
+  spinDurationMs?: number | null;
 };
 
 const initials = (name: string) =>
@@ -33,8 +41,10 @@ const initials = (name: string) =>
 
 export default function RaffleScreen() {
   const [live, setLive] = useState<RaffleLive | null>(null);
+  const [slot, setSlot] = useState<RafflePerson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const localSpinStart = useRef(0);
 
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackground = useThemeColor({}, 'card');
@@ -57,11 +67,44 @@ export default function RaffleScreen() {
 
   useEffect(() => {
     poll();
-    const timer = setInterval(poll, 800);
+    const timer = setInterval(poll, 350);
     return () => clearInterval(timer);
   }, []);
 
   const phase = live?.phase || 'closed';
+  const rosterKey = (live?.names || []).map((person) => person.name).join('\n');
+
+  useEffect(() => {
+    if (phase !== 'spinning') {
+      localSpinStart.current = 0;
+      setSlot(null);
+      return;
+    }
+    const names = (live?.names || []).filter((person) => person?.name);
+    if (!names.length) return;
+    if (!live?.spinStartedAt && !localSpinStart.current) {
+      localSpinStart.current = Date.now();
+    }
+    const duration = live?.spinDurationMs || 5600;
+    const started = Date.parse(live?.spinStartedAt || '') || localSpinStart.current || Date.now();
+    const totalTicks = 6 * names.length;
+    let frame = 0;
+    let lastName = '';
+    const tick = () => {
+      const t = Math.min(1, (Date.now() - started) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const step = Math.min(totalTicks, Math.floor(eased * Math.max(totalTicks, 1)));
+      const person = names[step % names.length];
+      if (person?.name && person.name !== lastName) {
+        lastName = person.name;
+        setSlot(person);
+      }
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [phase, live?.spinStartedAt, live?.spinDurationMs, rosterKey]);
+
   const count = live?.participantCount || 0;
   const winner = live?.winner;
 
@@ -100,9 +143,13 @@ export default function RaffleScreen() {
       ) : phase === 'spinning' ? (
         <View style={styles.centered}>
           <Text style={[styles.kicker, { color: primaryColor }]}>ŞANSLI İSİM</Text>
-          <Text style={[styles.spinName, { color: textColor }]}>{live?.highlightName || '...'}</Text>
-          {live?.highlightCompany ? (
-            <Text style={[styles.meta, { color: textSecondary }]}>{live.highlightCompany}</Text>
+          <Text style={[styles.spinName, { color: textColor }]}>
+            {slot?.name || live?.highlightName || '...'}
+          </Text>
+          {(slot?.company || live?.highlightCompany) ? (
+            <Text style={[styles.meta, { color: textSecondary }]}>
+              {slot?.company || live?.highlightCompany}
+            </Text>
           ) : null}
           <Text style={[styles.emptyText, { color: textSecondary }]}>Çekiliyor...</Text>
         </View>

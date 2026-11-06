@@ -604,6 +604,9 @@ export const raffleApi = {
     participantCount?: number;
     eventName?: string;
     winner?: { name: string; company?: string; title?: string } | null;
+    names?: { name: string; company?: string }[];
+    spinStartedAt?: string;
+    spinDurationMs?: number;
   }) => {
     await api.put('/raffle/live', payload);
   },

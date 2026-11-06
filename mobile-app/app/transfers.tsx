@@ -506,7 +506,7 @@ export default function TransfersScreen() {
         )}
       </ScrollView>
 
-      <Modal visible={showBookingModal} transparent animationType="fade" onRequestClose={closeModal}>
+      <Modal visible={showBookingModal} transparent statusBarTranslucent animationType="fade" onRequestClose={closeModal}>
         <View style={styles.modalRoot}>
           <Pressable style={styles.modalBackdrop} onPressIn={closeModal} accessibilityLabel="Kapat" />
           {selectedTransfer ? (
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   emptyText: { fontSize: 18, fontFamily: Fonts.semiBold, fontWeight: '600', marginBottom: 8 },
   emptySubtext: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  modalRoot: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(2, 12, 22, 0.72)', zIndex: 1 },
   modalSheet: {
     position: 'relative',
@@ -724,6 +724,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     maxHeight: '88%',
+    flexShrink: 1,
     borderRadius: 22,
     borderWidth: 1,
     paddingTop: 18,

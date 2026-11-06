@@ -348,7 +348,7 @@ const AccommodationsScreen: React.FC = () => {
         }
       />
 
-      <Modal visible={!!selected} transparent animationType="fade" onRequestClose={closeDetail}>
+      <Modal visible={!!selected} transparent statusBarTranslucent animationType="fade" onRequestClose={closeDetail}>
         <View style={styles.modalRoot}>
           <Pressable style={styles.modalBackdrop} onPressIn={closeDetail} accessibilityLabel="Kapat" />
           {selected ? (
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 72, height: 72, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontFamily: Fonts.semiBold, fontWeight: '600', marginBottom: 8 },
   emptyDescription: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  modalRoot: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(2, 12, 22, 0.72)', zIndex: 1 },
   modalSheet: {
     position: 'relative',
@@ -514,6 +514,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     maxHeight: '88%',
+    flexShrink: 1,
     borderRadius: 22,
     borderWidth: 1,
     paddingTop: 18,

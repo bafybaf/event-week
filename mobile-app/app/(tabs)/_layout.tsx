@@ -28,7 +28,7 @@ function TabGlyph({
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const hasRedirected = useRef(false);
-  const bottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 0 : 8);
+  const bottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 0 : 8) + 5;
   const tabBarHeight = 52 + bottomPad;
 
   useFocusEffect(

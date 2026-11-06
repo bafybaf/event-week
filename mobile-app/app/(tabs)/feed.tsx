@@ -72,6 +72,21 @@ interface FeedComment {
 }
 
 const MAX_POST_MEDIA = 10;
+const MENU_WIDTH = 168;
+const MENU_HEIGHT = 96;
+
+function menuSheetPosition(anchor: { x: number; y: number; width: number; height: number } | null) {
+  const screen = Dimensions.get('window');
+  if (!anchor) {
+    return { top: 72, right: 16 };
+  }
+  const right = Math.max(8, screen.width - (anchor.x + anchor.width));
+  const aboveTop = anchor.y - MENU_HEIGHT - 6;
+  if (aboveTop >= 8) {
+    return { top: aboveTop, right, width: MENU_WIDTH };
+  }
+  return { top: anchor.y + anchor.height + 6, right, width: MENU_WIDTH };
+}
 
 function slidesFor(item: FeedItem): FeedSlide[] {
   const source = Array.isArray(item.media) && item.media.length
@@ -118,6 +133,7 @@ export default function FeedScreen() {
   const [viewerIndex, setViewerIndex] = useState(0);
   const [viewerPageWidth, setViewerPageWidth] = useState(Dimensions.get('window').width);
   const [viewerPageHeight, setViewerPageHeight] = useState(Dimensions.get('window').height * 0.72);
+  const [viewerScrollEnabled, setViewerScrollEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [storyIndex, setStoryIndex] = useState(-1);
   const [commentItem, setCommentItem] = useState<FeedItem | null>(null);
@@ -125,7 +141,9 @@ export default function FeedScreen() {
   const [commentText, setCommentText] = useState('');
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [actionItem, setActionItem] = useState<FeedItem | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const moreRefs = useRef<Map<string, View>>(new Map());
 
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackground = useThemeColor({}, 'card');
@@ -426,11 +444,30 @@ export default function FeedScreen() {
     }
   };
 
+  const closeActionMenu = () => {
+    setActionItem(null);
+    setMenuAnchor(null);
+  };
+
+  const openActionMenu = (item: FeedItem) => {
+    const node = moreRefs.current.get(String(item.id));
+    if (!node) {
+      setMenuAnchor(null);
+      setActionItem(item);
+      return;
+    }
+    node.measureInWindow((x, y, width, height) => {
+      setMenuAnchor({ x, y, width, height });
+      setActionItem(item);
+    });
+  };
+
   const renderMedia = (item: FeedItem) => (
     <FeedMedia
       item={item}
       onOpen={(index) => {
         setViewerIndex(index);
+        setViewerScrollEnabled(true);
         setViewerItem(item);
       }}
     />
@@ -450,15 +487,24 @@ export default function FeedScreen() {
           <Text style={[styles.authorName, { color: textColor }]}>{displayName(item.author)}</Text>
         </View>
         {String(item.authorId) === String(currentUser?.id) && (
-          <TouchableOpacity
-            onPress={() => setActionItem(item)}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityRole="button"
-            accessibilityLabel="Paylaşım menüsü"
-            style={styles.moreBtn}
+          <View
+            collapsable={false}
+            ref={(node) => {
+              const key = String(item.id);
+              if (node) moreRefs.current.set(key, node);
+              else moreRefs.current.delete(key);
+            }}
           >
-            <Ionicons name="ellipsis-horizontal" size={22} color={textSecondary} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => openActionMenu(item)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Paylaşım menüsü"
+              style={styles.moreBtn}
+            >
+              <Ionicons name="ellipsis-horizontal" size={22} color={textSecondary} />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
       {renderMedia(item)}
@@ -620,13 +666,13 @@ export default function FeedScreen() {
       <Modal
         visible={!!actionItem}
         transparent
+        statusBarTranslucent
         animationType="fade"
-        onRequestClose={() => setActionItem(null)}
+        onRequestClose={closeActionMenu}
       >
         <View style={styles.menuOverlay}>
-          <Pressable style={styles.menuBackdrop} onPressIn={() => setActionItem(null)} accessibilityLabel="Menüyü kapat" />
-          <View style={styles.menuSheet}>
-            <Text style={[styles.menuTitle, { color: textSecondary }]}>Paylaşım</Text>
+          <Pressable style={styles.menuBackdrop} onPress={closeActionMenu} accessibilityLabel="Menüyü kapat" />
+          <View style={[styles.menuSheet, menuSheetPosition(menuAnchor)]}>
             <Pressable
               style={styles.menuAction}
               onPress={deleteActionItem}
@@ -637,9 +683,10 @@ export default function FeedScreen() {
               <Ionicons name="trash-outline" size={20} color="#ef4444" />
               <Text style={styles.menuDanger}>{deleting ? 'Siliniyor...' : 'Sil'}</Text>
             </Pressable>
+            <View style={styles.menuDivider} />
             <Pressable
               style={styles.menuAction}
-              onPressIn={() => setActionItem(null)}
+              onPress={closeActionMenu}
               accessibilityRole="button"
               accessibilityLabel="Vazgeç"
             >
@@ -784,7 +831,7 @@ export default function FeedScreen() {
 
       <Modal visible={!!viewerItem} animationType="fade" onRequestClose={() => setViewerItem(null)}>
         <GestureHandlerRootView style={styles.storyViewer}>
-          <SafeAreaView style={styles.storyOverlay}>
+          <SafeAreaView style={styles.viewerScreen}>
             <View style={styles.storyTop}>
               <Text style={styles.storyViewerName}>{displayName(viewerItem?.author)}</Text>
               <TouchableOpacity onPress={() => setViewerItem(null)}>
@@ -810,6 +857,7 @@ export default function FeedScreen() {
                   data={slidesFor(viewerItem)}
                   horizontal
                   pagingEnabled
+                  scrollEnabled={viewerScrollEnabled}
                   initialScrollIndex={Math.min(viewerIndex, Math.max(slidesFor(viewerItem).length - 1, 0))}
                   getItemLayout={(_, index) => ({
                     length: viewerPageWidth,
@@ -836,7 +884,13 @@ export default function FeedScreen() {
                           shouldPlay={index === viewerIndex}
                         />
                       ) : (
-                        <ZoomableImage key={`${viewerItem.id}-${index}-${slide.url}`} uri={slide.url} />
+                        <ZoomableImage
+                          key={`${viewerItem.id}-${index}-${slide.url}`}
+                          uri={slide.url}
+                          width={viewerPageWidth}
+                          height={viewerPageHeight}
+                          onZoomedChange={(zoomed) => setViewerScrollEnabled(!zoomed)}
+                        />
                       )}
                     </View>
                   )}
@@ -870,38 +924,29 @@ const styles = StyleSheet.create({
   avatarText: { color: '#fff', fontWeight: '700' },
   authorName: { fontWeight: '600' },
   moreBtn: { padding: 6, zIndex: 2 },
-  menuOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
+  menuOverlay: { flex: 1 },
   menuBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(2, 12, 22, 0.72)',
-    zIndex: 1,
+    backgroundColor: 'rgba(2, 12, 22, 0.35)',
   },
   menuSheet: {
-    position: 'relative',
+    position: 'absolute',
     zIndex: 5,
     elevation: 12,
-    width: '100%',
-    maxWidth: 360,
-    borderRadius: 16,
+    width: 168,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(43, 182, 232, 0.28)',
     backgroundColor: '#102536',
-    paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 8,
+    overflow: 'hidden',
   },
-  menuTitle: { textAlign: 'center', fontSize: 13, fontWeight: '600', marginBottom: 4 },
+  menuDivider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.12)' },
   menuAction: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   menuDanger: { color: '#ef4444', fontSize: 16, fontWeight: '700' },
   menuCancel: { fontSize: 16, fontWeight: '600' },
@@ -918,6 +963,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   storyMedia: { width: '100%', height: '100%' },
+  viewerScreen: { flex: 1 },
   viewerPager: { flex: 1, width: '100%' },
   storyChrome: {
     ...StyleSheet.absoluteFillObject,
