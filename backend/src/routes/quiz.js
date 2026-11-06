@@ -1,6 +1,7 @@
 const express = require('express');
 const { auth, adminAuth } = require('../middleware/auth');
 const quizService = require('../services/quizService');
+const { reportEventPush } = require('../services/notify');
 
 const router = express.Router();
 
@@ -59,7 +60,13 @@ router.post('/', adminAuth, asyncHandler(async (req, res) => {
   try {
     const quiz = await quizService.createQuiz(req.body);
     const state = await quizService.serializeState(quiz, { host: true });
-    res.status(201).json({ success: true, state });
+    const notification = await reportEventPush(quiz.eventId, {
+      title: 'Yeni quiz',
+      body: quiz.title,
+      data: { type: 'quiz', screen: '/quiz', quizId: quiz.id },
+      priority: 'high',
+    }, { excludeUserId: req.user.id });
+    res.status(201).json({ success: true, state, notification });
   } catch (error) {
     fail(res, error);
   }
@@ -110,7 +117,13 @@ router.post('/:id/lobby', adminAuth, asyncHandler(async (req, res) => {
   try {
     const quiz = await quizService.openLobby(req.params.id);
     const state = await quizService.serializeState(quiz, { host: true });
-    res.json({ success: true, state });
+    const notification = await reportEventPush(quiz.eventId, {
+      title: 'Canlı quiz başlıyor',
+      body: quiz.title,
+      data: { type: 'quiz', screen: '/quiz', quizId: quiz.id },
+      priority: 'high',
+    }, { excludeUserId: req.user.id });
+    res.json({ success: true, state, notification });
   } catch (error) {
     fail(res, error);
   }

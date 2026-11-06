@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, BarChart3, Users, Calendar, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastWithPush } from '../utils/pushResult.ts';
 import { programsApi, eventsApi, votingApi } from '../services/api.ts';
 
 interface VoteOption {
@@ -398,7 +399,7 @@ const Voting: React.FC = () => {
         allowAnonymous: false
       });
       setShowAddModal(false);
-      toast.success('Oylama başarıyla eklendi');
+      toastWithPush('Oylama başarıyla eklendi', created?.notification);
     } catch (error: any) {
       toast.error(error.message || 'Oylama eklenemedi');
     }

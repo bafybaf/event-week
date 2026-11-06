@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { quizApi } from '../services/api.ts';
+import { toastWithPush } from '../utils/pushResult.ts';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 const OPTION_BLUES = ['#2BB6E8', '#1A9ED4', '#0E90C8', '#0A6F9C'];
@@ -46,8 +47,14 @@ const QuizHost: React.FC = () => {
   const seconds = Math.ceil((quiz?.timeRemainingMs || 0) / 1000);
   const lastQuestion = quiz && quiz.currentQuestionIndex >= quiz.questionCount - 1;
 
+  const openLive = () => act(async () => {
+    const data = await quizApi.openLobby(id!);
+    toastWithPush('Canlı quiz açıldı', data?.notification);
+    return data?.state;
+  });
+
   const restart = (
-    <button onClick={() => act(() => quizApi.openLobby(id!))} className="host-btn-ghost">
+    <button onClick={openLive} className="host-btn-ghost">
       Yeniden başlat
     </button>
   );
@@ -56,7 +63,7 @@ const QuizHost: React.FC = () => {
     if (!quiz) return null;
     if (quiz.status === 'draft') {
       return (
-        <button onClick={() => act(() => quizApi.openLobby(id!))} className="host-btn">
+        <button onClick={openLive} className="host-btn">
           Lobiyi aç
         </button>
       );

@@ -174,7 +174,9 @@ export const programsApi = {
   // Create program (accepts UI payload with date + startTime/endTime)
   createProgram: async (payload: any) => {
     const response = await api.post('/programs', payload);
-    return response.data;
+    const program = response.data.program || {};
+    const plain = typeof program.toJSON === 'function' ? program.toJSON() : program;
+    return { ...plain, notification: response.data.notification };
   },
 
   notifyProgram: async (id: string) => {
@@ -556,7 +558,7 @@ export const quizApi = {
   },
   createQuiz: async (payload: any) => {
     const response = await api.post('/quiz', payload);
-    return response.data.state;
+    return response.data;
   },
   updateQuiz: async (id: string, payload: any) => {
     const response = await api.put(`/quiz/${id}`, payload);
@@ -568,7 +570,7 @@ export const quizApi = {
   },
   openLobby: async (id: string) => {
     const response = await api.post(`/quiz/${id}/lobby`);
-    return response.data.state;
+    return response.data;
   },
   ask: async (id: string) => {
     const response = await api.post(`/quiz/${id}/ask`);

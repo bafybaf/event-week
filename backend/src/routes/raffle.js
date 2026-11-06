@@ -1,6 +1,7 @@
 const express = require('express');
 const { auth, adminAuth } = require('../middleware/auth');
 const raffleService = require('../services/raffleService');
+const { notifyEvent } = require('../services/notify');
 
 const router = express.Router();
 
@@ -43,7 +44,22 @@ router.get('/watch', auth, asyncHandler(async (req, res) => {
 router.put('/live', adminAuth, asyncHandler(async (req, res) => {
   try {
     const eventId = req.body.eventId || req.query.eventId;
-    const live = await raffleService.publishLive(eventId, req.body);
+    const published = await raffleService.publishLive(eventId, req.body);
+    const { notify, ...live } = published;
+    if (notify === 'open' || notify === 'result') {
+      notifyEvent(eventId, {
+        title: notify === 'result' ? 'Çekiliş sonucu' : 'Çekiliş başladı',
+        body: notify === 'result'
+          ? 'Sonuç uygulamada açık.'
+          : (live.eventName || 'Çekiliş sahnesi açıldı.'),
+        data: {
+          type: 'raffle',
+          screen: '/raffle',
+          eventId: String(eventId),
+        },
+        priority: 'high',
+      }, { excludeUserId: req.user.id });
+    }
     res.json({ success: true, live });
   } catch (error) {
     fail(res, error);

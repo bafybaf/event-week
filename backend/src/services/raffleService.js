@@ -168,6 +168,8 @@ async function publishLive(eventId, body = {}) {
   }
   const previous = await getLive(eventId);
   const phase = ['roster', 'draw', 'spinning', 'revealed'].includes(body.phase) ? body.phase : 'roster';
+  const opened = previous.phase === 'closed' && phase !== 'closed';
+  const revealedNow = phase === 'revealed' && previous.phase !== 'revealed';
   const names = publicNames(body.names) || (Array.isArray(previous.names) ? previous.names : []);
   const payload = {
     phase,
@@ -204,7 +206,7 @@ async function publishLive(eventId, body = {}) {
       isActive: true
     });
   }
-  return payload;
+  return { ...payload, notify: opened ? 'open' : revealedNow ? 'result' : null };
 }
 
 async function getLive(eventId) {

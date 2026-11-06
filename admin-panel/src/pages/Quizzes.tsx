@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Play, Trash2, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastWithPush } from '../utils/pushResult.ts';
 import { useNavigate } from 'react-router-dom';
 import { quizApi, eventsApi } from '../services/api.ts';
 
@@ -162,10 +163,11 @@ const Quizzes: React.FC = () => {
       }));
       if (editingId) {
         await quizApi.updateQuiz(editingId, { title, questions: payload });
+        toast.success('Quiz kaydedildi');
       } else {
-        await quizApi.createQuiz({ eventId, title, questions: payload });
+        const created = await quizApi.createQuiz({ eventId, title, questions: payload });
+        toastWithPush('Quiz kaydedildi', created?.notification);
       }
-      toast.success('Quiz kaydedildi');
       setShowModal(false);
       loadQuizzes();
     } catch (error: any) {

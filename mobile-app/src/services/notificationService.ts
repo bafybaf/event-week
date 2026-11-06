@@ -76,6 +76,8 @@ export function getRouteFromNotificationData(data: any): NotificationRoute | nul
       return { pathname: '/surveys' };
     case 'quiz':
       return { pathname: '/quiz' };
+    case 'raffle':
+      return { pathname: '/raffle' };
     case 'flight':
       return { pathname: '/flights' };
     case 'support':

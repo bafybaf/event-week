@@ -1,6 +1,5 @@
 const { Op } = require('sequelize');
 const { Quiz, QuizQuestion, QuizPlayer, QuizAnswer, User, Event } = require('../models');
-const { notifyEvent } = require('./notify');
 
 const LIVE_STATUSES = ['lobby', 'question', 'reveal', 'leaderboard'];
 const BASE_POINTS = 1000;
@@ -178,11 +177,6 @@ async function openLobby(id) {
   quiz.rafflePool = null;
   quiz.raffleDrawnAt = null;
   await quiz.save();
-  notifyEvent(quiz.eventId, {
-    title: 'Canlı quiz başlıyor',
-    body: quiz.title,
-    data: { type: 'quiz', screen: '/quiz', quizId: quiz.id }
-  });
   return quiz;
 }
 
