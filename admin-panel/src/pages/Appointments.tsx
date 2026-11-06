@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Edit, Trash2, Eye, Calendar, Clock, User, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { toastWithPush } from '../utils/pushResult.ts';
@@ -53,6 +53,7 @@ const Appointments: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterEvent, setFilterEvent] = useState<string>('');
+  const appointmentRequest = useRef(0);
 
   const [newAppointment, setNewAppointment] = useState<Partial<Appointment & { eventId: string; requestedUserId: string; requesterId: string }>>({
     title: '',
@@ -78,27 +79,20 @@ const Appointments: React.FC = () => {
 
   useEffect(() => {
     fetchEvents();
-    loadAppointments();
   }, []);
 
   useEffect(() => {
-    if (filterEvent) {
-      loadAppointments();
-      loadUsers(filterEvent);
-    } else if (events.length > 0) {
-      // İlk etkinlik için kullanıcıları yükle (modal açıldığında göstermek için)
-      loadUsers(String(events[0].id));
+    loadAppointments(filterEvent);
+    const userEventId = filterEvent || (events[0] ? String(events[0].id) : '');
+    if (userEventId) {
+      loadUsers(userEventId);
     }
-  }, [filterEvent, events.length]);
+  }, [filterEvent, events]);
 
   const fetchEvents = async () => {
     try {
       const data = await eventsApi.getEvents();
       setEvents((data.events || data) || []);
-      if (events.length === 0 && (data.events || data).length > 0) {
-        const firstEvent = (data.events || data)[0];
-        setFilterEvent(String(firstEvent.id));
-      }
     } catch (error) {
       console.error('Error fetching events:', error);
     }
@@ -116,11 +110,13 @@ const Appointments: React.FC = () => {
     }
   };
 
-  const loadAppointments = async () => {
+  const loadAppointments = async (eventId = '') => {
+    const requestId = appointmentRequest.current + 1;
+    appointmentRequest.current = requestId;
     try {
       setLoading(true);
-      const eventId = filterEvent || undefined;
-      const appointmentsData = await appointmentsApi.getAppointments(eventId);
+      const appointmentsData = await appointmentsApi.getAppointments(eventId || undefined);
+      if (requestId !== appointmentRequest.current) return;
       const appointmentsList = Array.isArray(appointmentsData) ? appointmentsData : [];
       
       const formattedAppointments: Appointment[] = appointmentsList.map((apt: any) => ({
@@ -149,11 +145,14 @@ const Appointments: React.FC = () => {
       
       setAppointments(formattedAppointments);
     } catch (error) {
+      if (requestId !== appointmentRequest.current) return;
       console.error('Error loading appointments:', error);
       toast.error('Randevular yüklenirken hata oluştu');
       setAppointments([]);
     } finally {
-      setLoading(false);
+      if (requestId === appointmentRequest.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -319,7 +318,7 @@ const Appointments: React.FC = () => {
       const created = await appointmentsApi.createAppointment(payload);
       
       // Reload appointments
-      await loadAppointments();
+      await loadAppointments(filterEvent);
       
       setNewAppointment({
         title: '',
@@ -425,7 +424,7 @@ const Appointments: React.FC = () => {
       await appointmentsApi.updateAppointment(selectedAppointment.id, payload);
       
       // Reload appointments
-      await loadAppointments();
+      await loadAppointments(filterEvent);
       
       setShowEditModal(false);
       setSelectedAppointment(null);
@@ -461,7 +460,7 @@ const Appointments: React.FC = () => {
       await appointmentsApi.updateAppointment(appointmentId, { status: backendStatus });
       
       // Randevuları yeniden yükle
-      await loadAppointments();
+      await loadAppointments(filterEvent);
       
       toast.success('Randevu durumu başarıyla güncellendi');
     } catch (error: any) {
