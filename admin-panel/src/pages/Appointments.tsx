@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, Calendar, Clock, User, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastWithPush } from '../utils/pushResult.ts';
 import { appointmentsApi, eventsApi, usersApi } from '../services/api.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
@@ -342,7 +343,7 @@ const Appointments: React.FC = () => {
         requestedUserId: ''
       });
       setShowAddModal(false);
-      toast.success('Randevu başarıyla oluşturuldu ve kullanıcıya bildirim gönderildi');
+      toastWithPush('Randevu başarıyla oluşturuldu', created?.notification);
     } catch (error: any) {
       console.error('Error creating appointment:', error);
       toast.error(error.message || 'Randevu oluşturulurken hata oluştu');

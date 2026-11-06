@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, MapPin, Filter, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastWithPush } from '../utils/pushResult.ts';
 import { flightsApi, eventsApi } from '../services/api.ts';
 
 interface Flight {
@@ -179,12 +180,12 @@ const Flights: React.FC = () => {
     if (!selectedFlight) return;
 
     try {
-      await flightsApi.updateFlight(String(selectedFlight.id), {
+      const updated = await flightsApi.updateFlight(String(selectedFlight.id), {
         ...newFlight,
         price: parseFloat(newFlight.price) || 0,
         eventId: String(newFlight.eventId)
       });
-      toast.success('Uçuş başarıyla güncellendi');
+      toastWithPush('Uçuş başarıyla güncellendi', updated?.notification);
       setShowModal(false);
       setSelectedFlight(null);
       fetchFlights();

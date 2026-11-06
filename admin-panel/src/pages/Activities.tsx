@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, Calendar, MapPin, Users, Filter, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastWithPush } from '../utils/pushResult.ts';
 import { activitiesApi, eventsApi } from '../services/api.ts';
 
 interface Activity {
@@ -159,14 +160,14 @@ const Activities: React.FC = () => {
     }
 
     try {
-      await activitiesApi.createActivity({
+      const created = await activitiesApi.createActivity({
         ...newActivity,
         capacity: newActivity.capacity ? parseInt(newActivity.capacity) : null,
         price: parseFloat(newActivity.price) || 0,
         eventId: String(newActivity.eventId),
         organizerId: newActivity.organizerId ? String(newActivity.organizerId) : undefined
       });
-      toast.success('Aktivite başarıyla eklendi');
+      toastWithPush('Aktivite başarıyla eklendi', created?.notification);
       setShowModal(false);
       setNewActivity({
         name: '',

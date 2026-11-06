@@ -4,7 +4,7 @@ const Appointment = require('../models/Appointment');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const notificationService = require('../services/notificationService');
-const { notifyUser } = require('../services/notify');
+const { notifyUser, summarizeTickets } = require('../services/notify');
 
 const router = express.Router();
 
@@ -192,6 +192,7 @@ router.post('/', auth, async (req, res) => {
     });
 
     // Send notification to the requested user
+    let notification = null;
     try {
       const appointmentDateTime = new Date(appointmentDate);
       const formattedDate = appointmentDateTime.toLocaleDateString('tr-TR', {
@@ -204,7 +205,7 @@ router.post('/', auth, async (req, res) => {
         minute: '2-digit'
       });
 
-      await notificationService.sendUserNotification(requestedUserId, {
+      const tickets = await notificationService.sendUserNotification(requestedUserId, {
         title: 'Yeni Randevu Oluşturuldu',
         body: `${title} - ${formattedDate} ${formattedTime}`,
         data: {
@@ -215,16 +216,27 @@ router.post('/', auth, async (req, res) => {
         },
         priority: 'high'
       });
-      console.log(`Notification sent to user ${requestedUserId} for appointment ${appointment.id}`);
+      const result = summarizeTickets(Array.isArray(tickets) ? tickets : []);
+      notification = {
+        ...result,
+        message: result.okCount > 0
+          ? 'Randevu bildirimi telefona gönderildi'
+          : 'Randevu kaydedildi. Bu kullanıcının bildirim alacak kayıtlı telefonu yok.'
+      };
     } catch (notificationError) {
       console.error('Error sending notification:', notificationError);
-      // Don't fail the appointment creation if notification fails
+      notification = {
+        sentCount: 0,
+        okCount: 0,
+        message: 'Randevu kaydedildi. Bildirim gönderilemedi.'
+      };
     }
 
     res.status(201).json({
       success: true,
       appointment: createdAppointment,
-      message: 'Randevu başarıyla oluşturuldu'
+      notification,
+      message: notification ? notification.message : 'Randevu başarıyla oluşturuldu'
     });
   } catch (error) {
     console.error('Create appointment error:', error);

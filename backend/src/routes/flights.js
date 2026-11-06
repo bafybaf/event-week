@@ -2,7 +2,7 @@ const express = require('express');
 const { auth } = require('../middleware/auth');
 const Flight = require('../models/Flight');
 const Event = require('../models/Event');
-const { notifyEvent } = require('../services/notify');
+const { reportEventPush } = require('../services/notify');
 
 const router = express.Router();
 
@@ -213,6 +213,7 @@ router.put('/:id', auth, async (req, res) => {
     const gateChanged = (updateData.gate !== undefined && flight.gate !== previousGate)
       || (updateData.terminal !== undefined && flight.terminal !== previousTerminal);
 
+    let notification = null;
     if (statusChanged || gateChanged) {
       let title = 'Uçuş güncellemesi';
       let body = `${flight.flightNumber} uçuşunda güncelleme var.`;
@@ -236,7 +237,7 @@ router.put('/:id', auth, async (req, res) => {
         updateType = 'gate_change';
       }
 
-      notifyEvent(flight.eventId, {
+      notification = await reportEventPush(flight.eventId, {
         title,
         body,
         data: {
@@ -252,7 +253,8 @@ router.put('/:id', auth, async (req, res) => {
     res.json({
       success: true,
       flight: flight,
-      message: 'Uçuş başarıyla güncellendi'
+      notification,
+      message: notification ? notification.message : 'Uçuş başarıyla güncellendi'
     });
   } catch (error) {
     console.error('Update flight error:', error);

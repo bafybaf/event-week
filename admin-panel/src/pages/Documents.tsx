@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, FileText, Download, Calendar, Filter, Search, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastWithPush } from '../utils/pushResult.ts';
 import { documentsApi, eventsApi } from '../services/api.ts';
 import { API_ORIGIN } from '../config.ts';
 
@@ -200,7 +201,7 @@ const Documents: React.FC = () => {
     }
 
     try {
-      await documentsApi.createDocument({
+      const created = await documentsApi.createDocument({
           title: newDocument.title,
           description: newDocument.description,
           fileUrl: newDocument.fileUrl,
@@ -213,7 +214,7 @@ const Documents: React.FC = () => {
           eventId: String(newDocument.eventId),
           notes: newDocument.notes
       });
-        toast.success('Doküman başarıyla eklendi');
+        toastWithPush('Doküman başarıyla eklendi', created?.notification);
         setShowModal(false);
         resetForm();
         fetchDocuments();

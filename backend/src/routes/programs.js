@@ -3,7 +3,8 @@ const { Op } = require('sequelize');
 const { sequelize } = require('../database/connection');
 // Import models from index to ensure associations are initialized
 const { Program, Speaker, ProgramSpeaker, User } = require('../models');
-const { notifyEvent } = require('../services/notify');
+const { auth } = require('../middleware/auth');
+const { reportEventPush } = require('../services/notify');
 const router = express.Router();
 
 const ensureProgramPdfColumns = async () => {
@@ -315,20 +316,27 @@ router.post('/', async (req, res) => {
 
     console.log('Program created successfully:', created.id);
 
-    if (created.isVotingEnabled) {
-      notifyEvent(created.eventId, {
-        title: 'Yeni oylama',
-        body: created.votingQuestion || `${created.title} için oylama açıldı.`,
-        data: {
-          type: 'voting',
-          screen: '/voting',
-          programId: created.id,
-        },
-        priority: 'high',
-      });
-    }
+    const notification = await reportEventPush(created.eventId, created.isVotingEnabled ? {
+      title: 'Yeni oylama',
+      body: created.votingQuestion || `${created.title} için oylama açıldı.`,
+      data: {
+        type: 'voting',
+        screen: '/voting',
+        programId: created.id,
+      },
+      priority: 'high',
+    } : {
+      title: 'Yeni program',
+      body: created.title || 'Programa yeni bir dosya eklendi.',
+      data: {
+        type: 'program',
+        screen: '/(tabs)/program',
+        programId: created.id,
+      },
+      priority: 'default',
+    });
 
-    res.status(201).json({ success: true, program: created });
+    res.status(201).json({ success: true, program: created, notification });
   } catch (error) {
     console.error('Create program error:', error);
     console.error('Error stack:', error.stack);
@@ -642,8 +650,9 @@ router.put('/:id', async (req, res) => {
       
       console.log('Program updated successfully with speakers:', programData.speakers.length);
 
+      let notification = null;
       if (!wasVotingEnabled && !!program.isVotingEnabled) {
-        notifyEvent(program.eventId, {
+        notification = await reportEventPush(program.eventId, {
           title: 'Yeni oylama',
           body: program.votingQuestion || `${program.title} için oylama açıldı.`,
           data: {
@@ -655,14 +664,15 @@ router.put('/:id', async (req, res) => {
         });
       }
 
-      res.json({ success: true, program: programData });
+      res.json({ success: true, program: programData, notification });
     } catch (reloadError) {
       console.warn('Warning: Could not load speakers after update:', reloadError.message);
       const programData = program.toJSON();
       programData.speakers = [];
 
+      let notification = null;
       if (!wasVotingEnabled && !!program.isVotingEnabled) {
-        notifyEvent(program.eventId, {
+        notification = await reportEventPush(program.eventId, {
           title: 'Yeni oylama',
           body: program.votingQuestion || `${program.title} için oylama açıldı.`,
           data: {
@@ -674,7 +684,7 @@ router.put('/:id', async (req, res) => {
         });
       }
 
-      res.json({ success: true, program: programData });
+      res.json({ success: true, program: programData, notification });
     }
   } catch (error) {
     console.error('Update program error:', error);
@@ -689,6 +699,38 @@ router.put('/:id', async (req, res) => {
       error: 'Failed to update program',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+});
+
+router.post('/:id/notify', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
+      return res.status(403).json({ success: false, error: 'Access denied. Admin or organizer role required.' });
+    }
+
+    const program = await Program.findByPk(req.params.id);
+    if (!program) {
+      return res.status(404).json({ success: false, error: 'Program not found' });
+    }
+    if (!program.eventId) {
+      return res.status(400).json({ success: false, error: 'Bu programda etkinlik seçili değil.' });
+    }
+
+    const notification = await reportEventPush(program.eventId, {
+      title: 'Yeni program',
+      body: program.title || 'Programa yeni bir dosya eklendi.',
+      data: {
+        type: 'program',
+        screen: '/(tabs)/program',
+        programId: program.id,
+      },
+      priority: 'default',
+    }, { excludeUserId: req.user.id });
+
+    res.json({ success: true, ...notification });
+  } catch (error) {
+    console.error('Notify program error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Bildirim gönderilemedi' });
   }
 });
 

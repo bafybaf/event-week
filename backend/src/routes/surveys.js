@@ -5,7 +5,7 @@ const SurveyResponse = require('../models/SurveyResponse');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const Program = require('../models/Program');
-const { notifyEvent } = require('../services/notify');
+const { reportEventPush } = require('../services/notify');
 
 const router = express.Router();
 
@@ -206,8 +206,9 @@ router.post('/', auth, async (req, res) => {
       responseCount: createdSurveyData.currentResponses || 0
     };
 
+    let notification = null;
     if (survey.status && survey.status !== 'draft') {
-      notifyEvent(eventId, {
+      notification = await reportEventPush(eventId, {
         title: 'Yeni anket',
         body: title,
         data: {
@@ -222,7 +223,8 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json({
       success: true,
       survey: mappedSurvey,
-      message: 'Anket başarıyla oluşturuldu'
+      notification,
+      message: notification ? notification.message : 'Anket başarıyla oluşturuldu'
     });
   } catch (error) {
     console.error('Create survey error:', error);
@@ -294,8 +296,9 @@ router.put('/:id', auth, async (req, res) => {
       responseCount: surveyData.currentResponses || 0
     };
 
+    let notification = null;
     if (survey.status === 'active' && previousStatus !== 'active') {
-      notifyEvent(survey.eventId, {
+      notification = await reportEventPush(survey.eventId, {
         title: 'Yeni anket',
         body: survey.title,
         data: {
@@ -310,7 +313,8 @@ router.put('/:id', auth, async (req, res) => {
     res.json({
       success: true,
       survey: mappedSurvey,
-      message: 'Anket başarıyla güncellendi'
+      notification,
+      message: notification ? notification.message : 'Anket başarıyla güncellendi'
     });
   } catch (error) {
     console.error('Update survey error:', error);

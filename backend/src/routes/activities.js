@@ -3,7 +3,7 @@ const { auth } = require('../middleware/auth');
 const Activity = require('../models/Activity');
 const Event = require('../models/Event');
 const User = require('../models/User');
-const { notifyEvent } = require('../services/notify');
+const { reportEventPush } = require('../services/notify');
 
 const router = express.Router();
 
@@ -192,7 +192,7 @@ router.post('/', auth, async (req, res) => {
 
     console.log('✅ Activity created successfully:', createdActivity);
 
-    notifyEvent(eventId, {
+    const notification = await reportEventPush(eventId, {
       title: 'Yeni aktivite',
       body: name,
       data: {
@@ -206,7 +206,8 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json({
       success: true,
       activity: createdActivity,
-      message: 'Aktivite başarıyla oluşturuldu'
+      notification,
+      message: notification.message
     });
   } catch (error) {
     console.error('❌ Create activity error:', error);

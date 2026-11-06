@@ -2,7 +2,7 @@ const express = require('express');
 const { auth } = require('../middleware/auth');
 const Transfer = require('../models/Transfer');
 const Event = require('../models/Event');
-const { notifyEvent } = require('../services/notify');
+const { reportEventPush } = require('../services/notify');
 
 const router = express.Router();
 
@@ -148,7 +148,7 @@ router.post('/', auth, async (req, res) => {
       ]
     });
 
-    notifyEvent(eventId, {
+    const notification = await reportEventPush(eventId, {
       title: 'Yeni transfer',
       body: `${name}: ${departureLocation} → ${arrivalLocation}`,
       data: {
@@ -162,7 +162,8 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json({
       success: true,
       transfer: createdTransfer,
-      message: 'Transfer başarıyla oluşturuldu'
+      notification,
+      message: notification.message
     });
   } catch (error) {
     console.error('Create transfer error:', error);

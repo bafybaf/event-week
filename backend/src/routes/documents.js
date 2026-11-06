@@ -3,7 +3,7 @@ const { auth } = require('../middleware/auth');
 const Document = require('../models/Document');
 const Event = require('../models/Event');
 const User = require('../models/User');
-const { notifyEvent } = require('../services/notify');
+const { reportEventPush } = require('../services/notify');
 
 const router = express.Router();
 
@@ -175,7 +175,7 @@ router.post('/', auth, async (req, res) => {
       ]
     });
 
-    notifyEvent(eventId, {
+    const notification = await reportEventPush(eventId, {
       title: 'Yeni doküman',
       body: title,
       data: {
@@ -189,7 +189,8 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json({
       success: true,
       document: createdDocument,
-      message: 'Doküman başarıyla oluşturuldu'
+      notification,
+      message: notification.message
     });
   } catch (error) {
     console.error('Create document error:', error);

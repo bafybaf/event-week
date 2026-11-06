@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, Car, MapPin, Clock, Users, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastWithPush } from '../utils/pushResult.ts';
 import { transfersApi, eventsApi } from '../services/api.ts';
 
 interface Transfer {
@@ -281,7 +282,7 @@ const Transfers: React.FC = () => {
       setTransfers([...transfers, formattedTransfer]);
       setNewTransfer(emptyTransfer);
       setShowAddModal(false);
-      toast.success('Transfer başarıyla eklendi');
+      toastWithPush('Transfer başarıyla eklendi', created?.notification);
     } catch (error: any) {
       console.error('Error adding transfer:', error);
       toast.error(error.response?.data?.error || error.message || 'Transfer eklenirken hata oluştu');

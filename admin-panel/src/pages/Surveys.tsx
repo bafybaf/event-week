@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, BarChart3, Calendar, Filter, Search, Users, CheckCircle, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastWithPush } from '../utils/pushResult.ts';
 import { surveysApi, eventsApi } from '../services/api.ts';
 
 interface Survey {
@@ -266,7 +267,7 @@ const Surveys: React.FC = () => {
     }
 
     try {
-      await surveysApi.createSurvey({
+      const created = await surveysApi.createSurvey({
           title: newSurvey.title,
           description: newSurvey.description,
           startDate: newSurvey.startDate,
@@ -278,7 +279,7 @@ const Surveys: React.FC = () => {
           maxResponses: newSurvey.maxResponses ? parseInt(newSurvey.maxResponses) : null,
           notes: newSurvey.notes
       });
-        toast.success('Anket başarıyla eklendi');
+        toastWithPush('Anket başarıyla eklendi', created?.notification);
         setShowModal(false);
         resetForm();
         fetchSurveys();

@@ -174,7 +174,12 @@ export const programsApi = {
   // Create program (accepts UI payload with date + startTime/endTime)
   createProgram: async (payload: any) => {
     const response = await api.post('/programs', payload);
-    return response.data.program;
+    return response.data;
+  },
+
+  notifyProgram: async (id: string) => {
+    const response = await api.post(`/programs/${id}/notify`);
+    return response.data;
   },
 
   // Update program
@@ -203,7 +208,7 @@ export const activitiesApi = {
   },
   createActivity: async (payload: any) => {
     const response = await api.post('/activities', payload);
-    return response.data.activity;
+    return { ...(response.data.activity || {}), notification: response.data.notification };
   },
   updateActivity: async (id: string, payload: any) => {
     const response = await api.put(`/activities/${id}`, payload);
@@ -232,7 +237,7 @@ export const flightsApi = {
   },
   updateFlight: async (id: string, payload: any) => {
     const response = await api.put(`/flights/${id}`, payload);
-    return response.data.flight;
+    return { ...(response.data.flight || {}), notification: response.data.notification };
   },
   deleteFlight: async (id: string) => {
     const response = await api.delete(`/flights/${id}`);
@@ -370,7 +375,7 @@ export const documentsApi = {
   },
   createDocument: async (payload: any) => {
     const response = await api.post('/documents', payload);
-    return response.data.document || response.data;
+    return { ...(response.data.document || response.data), notification: response.data.notification };
   },
   updateDocument: async (id: string, payload: any) => {
     const response = await api.put(`/documents/${id}`, payload);
@@ -395,7 +400,7 @@ export const surveysApi = {
   },
   createSurvey: async (payload: any) => {
     const response = await api.post('/surveys', payload);
-    return response.data.survey || response.data;
+    return { ...(response.data.survey || response.data), notification: response.data.notification };
   },
   updateSurvey: async (id: string, payload: any) => {
     const response = await api.put(`/surveys/${id}`, payload);
@@ -420,7 +425,7 @@ export const transfersApi = {
   },
   createTransfer: async (payload: any) => {
     const response = await api.post('/transfers', payload);
-    return response.data.transfer || response.data;
+    return { ...(response.data.transfer || response.data), notification: response.data.notification };
   },
   updateTransfer: async (id: string, payload: any) => {
     const response = await api.put(`/transfers/${id}`, payload);
@@ -480,7 +485,7 @@ export const appointmentsApi = {
   },
   createAppointment: async (payload: any) => {
     const response = await api.post('/appointments', payload);
-    return response.data.appointment || response.data;
+    return { ...(response.data.appointment || response.data), notification: response.data.notification };
   },
   updateAppointment: async (id: string, payload: any) => {
     const response = await api.put(`/appointments/${id}`, payload);

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Plus, Trash2, Upload } from 'lucide-react';
+import { Bell, FileText, Plus, Trash2, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventsApi, programsApi } from '../services/api.ts';
 import { API_ORIGIN, fileUrl } from '../config.ts';
+import { toastWithPush } from '../utils/pushResult.ts';
 
 interface Event {
   id: number | string;
@@ -27,6 +28,7 @@ const Programs: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [notifyingId, setNotifyingId] = useState('');
   const [form, setForm] = useState({
     eventId: '',
     title: '',
@@ -146,14 +148,14 @@ const Programs: React.FC = () => {
 
     try {
       setSaving(true);
-      await programsApi.createProgram({
+      const result = await programsApi.createProgram({
         eventId: String(form.eventId),
         title: form.title.trim() || form.fileName || 'Program',
         pdfUrl: form.pdfUrl,
         fileName: form.fileName,
         fileSize: form.fileSize
       });
-      toast.success('Program PDF eklendi');
+      toastWithPush('Program PDF eklendi', result?.notification);
       setShowModal(false);
       resetForm();
       loadPrograms();
@@ -161,6 +163,18 @@ const Programs: React.FC = () => {
       toast.error(error.response?.data?.error || error.message || 'Kayıt başarısız');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleNotify = async (id: string) => {
+    try {
+      setNotifyingId(id);
+      const result = await programsApi.notifyProgram(id);
+      toastWithPush('Bildirim gönderildi', result);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || error.message || 'Bildirim gönderilemedi');
+    } finally {
+      setNotifyingId('');
     }
   };
 
@@ -224,13 +238,23 @@ const Programs: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => handleDelete(program.id)}
-                className="text-red-600 hover:text-red-800 p-1"
-                title="Sil"
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleNotify(program.id)}
+                  disabled={notifyingId === program.id}
+                  className="text-blue-600 hover:text-blue-800 p-1 disabled:opacity-50"
+                  title="Telefona bildirim gönder"
+                >
+                  <Bell size={16} />
+                </button>
+                <button
+                  onClick={() => handleDelete(program.id)}
+                  className="text-red-600 hover:text-red-800 p-1"
+                  title="Sil"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
             {program.pdfUrl && (
               <a
