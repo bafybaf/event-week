@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT_API = 'http://xcnmst8cowlxzcnc24jgwofs.76.13.14.253.sslip.io/api';
+const DEFAULT_API = 'https://themicer.sapkavefilsunum.com/api';
 
 function resolveOrigin() {
   const fromEnv = String(process.env.EXPO_PUBLIC_API_URL || '').trim();

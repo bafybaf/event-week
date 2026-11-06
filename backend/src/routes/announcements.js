@@ -453,6 +453,15 @@ router.post('/:id/notify', auth, async (req, res) => {
       await announcement.save();
     }
 
+    if (!announcement.eventId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bu duyuruda etkinlik seçili değil.'
+      });
+    }
+
+    const event = await Event.findByPk(announcement.eventId, { attributes: ['id', 'name'] });
+    const eventName = event?.name || 'Seçili etkinlik';
     const notifyResult = await sendAnnouncementPush(announcement, { excludeUserId: req.user.id });
 
     res.json({
@@ -460,9 +469,10 @@ router.post('/:id/notify', auth, async (req, res) => {
       sentCount: notifyResult.sentCount,
       okCount: notifyResult.okCount,
       errors: notifyResult.errorMessages,
+      eventName,
       message: notifyResult.okCount > 0
-        ? `Bildirim ${notifyResult.okCount} cihaza gönderildi`
-        : 'Bu etkinlikte bildirim alacak kayıtlı cihaz yok. Katılımcı uygulamayı açıp bildirim iznini vermeli.'
+        ? `${eventName} etkinliğine bildirim ${notifyResult.okCount} telefona gönderildi`
+        : `${eventName} etkinliğinde bildirim alacak kayıtlı telefon yok. Katılımcı bu etkinlikle giriş yapıp bildirim iznini vermeli.`
     });
   } catch (error) {
     console.error('Notify announcement error:', error);

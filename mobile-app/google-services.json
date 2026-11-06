@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1016901984711",
+    "project_id": "sapkavefilsunum-themicer",
+    "storage_bucket": "sapkavefilsunum-themicer.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1016901984711:android:a73f1ca19de66a07a3f9e2",
+        "android_client_info": {
+          "package_name": "com.sapkavefilsunum.themicer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdW41sqeNrSzdkCcOh-jN2ZiR05Q1qoho"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -444,6 +444,10 @@ export default function FeedScreen() {
     }
   };
 
+  const setViewerZoomed = useCallback((zoomed: boolean) => {
+    setViewerScrollEnabled((current) => (current === !zoomed ? current : !zoomed));
+  }, []);
+
   const closeActionMenu = () => {
     setActionItem(null);
     setMenuAnchor(null);
@@ -484,7 +488,7 @@ export default function FeedScreen() {
               <Text style={styles.avatarText}>{initials(item.author)}</Text>
             )}
           </View>
-          <Text style={[styles.authorName, { color: textColor }]}>{displayName(item.author)}</Text>
+          <Text style={[styles.authorName, { color: textColor }]} numberOfLines={1}>{displayName(item.author)}</Text>
         </View>
         {String(item.authorId) === String(currentUser?.id) && (
           <View
@@ -889,13 +893,23 @@ export default function FeedScreen() {
                           uri={slide.url}
                           width={viewerPageWidth}
                           height={viewerPageHeight}
-                          onZoomedChange={(zoomed) => setViewerScrollEnabled(!zoomed)}
+                          onZoomedChange={setViewerZoomed}
                         />
                       )}
                     </View>
                   )}
                   style={{ flex: 1 }}
                 />
+                {slidesFor(viewerItem).length > 1 && (
+                  <View style={styles.viewerDots} pointerEvents="none">
+                    {slidesFor(viewerItem).map((_, index) => (
+                      <View
+                        key={`${viewerItem.id}-dot-${index}`}
+                        style={[styles.viewerDot, index === viewerIndex && styles.viewerDotOn]}
+                      />
+                    ))}
+                  </View>
+                )}
               </View>
             )}
           </SafeAreaView>
@@ -917,13 +931,20 @@ const styles = StyleSheet.create({
   storyImage: { width: '100%', height: '100%' },
   storyName: { fontSize: 11, marginTop: 4, width: 72, textAlign: 'center' },
   postCard: { marginHorizontal: 12, marginBottom: 16, borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
-  postHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    zIndex: 4,
+    elevation: 4,
+  },
+  authorRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 8 },
   avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   avatarImage: { width: 36, height: 36 },
   avatarText: { color: '#fff', fontWeight: '700' },
-  authorName: { fontWeight: '600' },
-  moreBtn: { padding: 6, zIndex: 2 },
+  authorName: { flex: 1, fontWeight: '600' },
+  moreBtn: { padding: 6, flexShrink: 0, zIndex: 2 },
   menuOverlay: { flex: 1 },
   menuBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -1004,6 +1025,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   viewerCount: { color: '#fff', textAlign: 'center', fontWeight: '700', marginBottom: 8 },
+  viewerDots: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 18,
+    zIndex: 5,
+    elevation: 6,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  viewerDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  viewerDotOn: { backgroundColor: '#fff' },
   captionInput: { borderWidth: 1, borderRadius: 12, minHeight: 90, padding: 12, textAlignVertical: 'top' },
   publishBtn: { marginTop: 16, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   publishText: { color: '#fff', fontWeight: '700', fontSize: 16 },

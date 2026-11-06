@@ -16,7 +16,7 @@ import Constants from 'expo-constants';
  * Örnek: '192.168.1.100'
  */
 
-const PRODUCTION_API_URL = 'http://xcnmst8cowlxzcnc24jgwofs.76.13.14.253.sslip.io/api';
+const PRODUCTION_API_URL = 'https://themicer.sapkavefilsunum.com/api';
 
 const getApiUrl = (): string => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;

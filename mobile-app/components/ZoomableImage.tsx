@@ -1,3 +1,4 @@
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { Image } from 'expo-image';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -5,7 +6,12 @@ import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
 
-export function ZoomableImage({
+function clamp(value: number, min: number, max: number) {
+  'worklet';
+  return Math.min(Math.max(value, min), max);
+}
+
+function ZoomableImageComponent({
   uri,
   width,
   height,
@@ -22,72 +28,90 @@ export function ZoomableImage({
   const translateY = useSharedValue(0);
   const savedX = useSharedValue(0);
   const savedY = useSharedValue(0);
+  const pageW = useSharedValue(width);
+  const pageH = useSharedValue(height);
   const announced = useSharedValue(false);
+  const onZoomedChangeRef = useRef(onZoomedChange);
+  onZoomedChangeRef.current = onZoomedChange;
 
-  const reportZoom = (zoomed: boolean) => {
-    onZoomedChange?.(zoomed);
-  };
+  const notify = useRef((zoomed: boolean) => {
+    onZoomedChangeRef.current?.(zoomed);
+  }).current;
 
-  const reset = () => {
-    'worklet';
-    scale.value = withTiming(1);
-    savedScale.value = 1;
-    translateX.value = withTiming(0);
-    translateY.value = withTiming(0);
-    savedX.value = 0;
-    savedY.value = 0;
-    announced.value = false;
-    runOnJS(reportZoom)(false);
-  };
+  useEffect(() => {
+    pageW.value = width;
+    pageH.value = height;
+  }, [width, height, pageW, pageH]);
 
-  const pinch = Gesture.Pinch()
-    .onUpdate((event) => {
-      const next = savedScale.value * event.scale;
-      scale.value = Math.min(Math.max(next, MIN_SCALE), MAX_SCALE);
-      if (scale.value > 1.01 && !announced.value) {
-        announced.value = true;
-        runOnJS(reportZoom)(true);
+  const gesture = useMemo(() => {
+    const reset = () => {
+      'worklet';
+      scale.value = withTiming(1);
+      savedScale.value = 1;
+      translateX.value = withTiming(0);
+      translateY.value = withTiming(0);
+      savedX.value = 0;
+      savedY.value = 0;
+      if (announced.value) {
+        announced.value = false;
+        runOnJS(notify)(false);
       }
-    })
-    .onEnd(() => {
-      if (scale.value <= 1.02) {
-        reset();
-        return;
-      }
-      savedScale.value = scale.value;
-      runOnJS(reportZoom)(scale.value > 1.01);
-    });
+    };
 
-  const pan = Gesture.Pan()
-    .minPointers(1)
-    .maxPointers(1)
-    .manualActivation(true)
-    .onTouchesDown((_event, state) => {
-      if (scale.value <= 1.01) state.fail();
-    })
-    .onTouchesMove((_event, state) => {
-      if (scale.value > 1.01) state.activate();
-      else state.fail();
-    })
-    .onUpdate((event) => {
-      if (scale.value <= 1) return;
-      translateX.value = savedX.value + event.translationX;
-      translateY.value = savedY.value + event.translationY;
-    })
-    .onEnd(() => {
-      if (scale.value <= 1) {
-        translateX.value = withTiming(0);
-        translateY.value = withTiming(0);
-        savedX.value = 0;
-        savedY.value = 0;
-        runOnJS(reportZoom)(false);
-        return;
-      }
-      savedX.value = translateX.value;
-      savedY.value = translateY.value;
-    });
+    const pinch = Gesture.Pinch()
+      .onBegin(() => {
+        savedScale.value = scale.value;
+        savedX.value = translateX.value;
+        savedY.value = translateY.value;
+      })
+      .onUpdate((event) => {
+        const next = clamp(savedScale.value * event.scale, MIN_SCALE, MAX_SCALE);
+        const ratio = next / Math.max(savedScale.value, 0.01);
+        const centerX = pageW.value / 2;
+        const centerY = pageH.value / 2;
+        translateX.value = savedX.value * ratio + (event.focalX - centerX) * (1 - ratio);
+        translateY.value = savedY.value * ratio + (event.focalY - centerY) * (1 - ratio);
+        scale.value = next;
+        if (next > 1.01 && !announced.value) {
+          announced.value = true;
+          runOnJS(notify)(true);
+        }
+      })
+      .onEnd(() => {
+        if (scale.value <= 1.02) {
+          reset();
+          return;
+        }
+        savedScale.value = scale.value;
+        savedX.value = translateX.value;
+        savedY.value = translateY.value;
+      });
 
-  const gesture = Gesture.Simultaneous(pinch, pan);
+    const pan = Gesture.Pan()
+      .minPointers(1)
+      .maxPointers(1)
+      .manualActivation(true)
+      .onTouchesDown((_event, state) => {
+        if (scale.value <= 1.01) state.fail();
+      })
+      .onTouchesMove((_event, state) => {
+        if (scale.value > 1.01) state.activate();
+        else state.fail();
+      })
+      .onUpdate((event) => {
+        if (scale.value <= 1) return;
+        const limitX = ((scale.value - 1) * pageW.value) / 2;
+        const limitY = ((scale.value - 1) * pageH.value) / 2;
+        translateX.value = clamp(savedX.value + event.translationX, -limitX, limitX);
+        translateY.value = clamp(savedY.value + event.translationY, -limitY, limitY);
+      })
+      .onEnd(() => {
+        savedX.value = translateX.value;
+        savedY.value = translateY.value;
+      });
+
+    return Gesture.Simultaneous(pinch, pan);
+  }, [announced, notify, pageH, pageW, savedScale, savedX, savedY, scale, translateX, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -101,9 +125,17 @@ export function ZoomableImage({
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={[{ width, height }, animatedStyle]}>
-        <Image source={{ uri }} style={{ width, height }} contentFit="contain" />
+      <Animated.View renderToHardwareTextureAndroid style={[{ width, height }, animatedStyle]}>
+        <Image
+          source={{ uri }}
+          style={{ width, height }}
+          contentFit="contain"
+          cachePolicy="memory-disk"
+          recyclingKey={uri}
+        />
       </Animated.View>
     </GestureDetector>
   );
 }
+
+export const ZoomableImage = memo(ZoomableImageComponent);

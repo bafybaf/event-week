@@ -103,7 +103,7 @@ class NotificationService {
     if (!Notifications || Platform.OS !== 'android') return;
     try {
       await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-        name: 'Event Week',
+        name: 'The Micer',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#2BB6E8',

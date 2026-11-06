@@ -39,6 +39,7 @@ interface Announcement {
   attachments?: string[];
   createdAt: string;
   updatedAt: string;
+  event?: { id?: string; name?: string } | null;
 }
 
 interface Event {
@@ -84,6 +85,11 @@ const Announcements: React.FC = () => {
   }, [filterEvent]);
 
   const isBusy = (action: string, id: string) => pendingAction === `${action}:${id}`;
+
+  const eventNameOf = (announcement: { eventId?: string; event?: { name?: string } | null }) => {
+    const listed = events.find((event) => String(event.id) === String(announcement.eventId || ''));
+    return announcement.event?.name || listed?.name || '';
+  };
 
   const fetchEvents = async () => {
     try {
@@ -207,7 +213,7 @@ const Announcements: React.FC = () => {
       toast.error('Lütfen tüm zorunlu alanları doldurun');
       return;
     }
-    const selectedEventId = selectedEventForCreate || filterEvent || (events.length > 0 ? String(events[0].id) : '');
+    const selectedEventId = selectedEventForCreate;
     
     if (!selectedEventId) {
       toast.error('Lütfen bir etkinlik seçin');
@@ -362,7 +368,10 @@ const Announcements: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+          setSelectedEventForCreate(filterEvent || (events[0] ? String(events[0].id) : ''));
+          setShowAddModal(true);
+        }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
         >
           <Plus size={20} />
@@ -499,6 +508,9 @@ const Announcements: React.FC = () => {
                   <div>
                     {getTargetAudienceText(announcement.targetAudience)}
                   </div>
+                  <div className="font-medium text-gray-700">
+                    {eventNameOf(announcement) || 'Etkinlik seçilmedi'}
+                  </div>
                 </div>
               </div>
 
@@ -595,7 +607,7 @@ const Announcements: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Etkinlik *</label>
                   <select
-                    value={selectedEventForCreate || filterEvent}
+                    value={selectedEventForCreate}
                     onChange={(e) => setSelectedEventForCreate(e.target.value)}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required

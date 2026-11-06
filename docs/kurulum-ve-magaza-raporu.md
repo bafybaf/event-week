@@ -14,11 +14,11 @@ Tarih: 6 Kasım 2026.
 2. **Yönetim paneli.** Organizatörün tarayıcıdan açtığı site. Etkinlik, duyuru, çekiliş, simge ve uygulama adı buradan yönetilir.
 3. **Sunucu.** Panelin ve telefonun konuştuğu adres. Katılımcı listesi, paylaşımlar ve ayarlar burada durur.
 
-Şu an telefon, şu adrese bağlanır:
+Telefon uygulamasının yeni adresi:
 
-`http://xcnmst8cowlxzcnc24jgwofs.76.13.14.253.sslip.io/api`
+`https://themicer.sapkavefilsunum.com/api`
 
-Bu adres geçici bir deneme adresidir. Başında `https` değil `http` vardır. Mağazaya çıkmadan önce kalıcı bir alan adı ve kilitli (`https`) bağlantı gerekir. Nedeni aşağıda, eksikler bölümündedir.
+Panel de aynı alan adından açılır: `https://themicer.sapkavefilsunum.com/login`. Yüklü APK hâlâ eski deneme adresindedir. Bu adres, yeni derleme kurulunca telefona geçer.
 
 ---
 
@@ -68,10 +68,10 @@ Expo proje numarası: `1569b470-2b00-4408-b31c-73172ece9800`.
 Mağazaya koymadan önce düzelmesi gerekenler, önem sırasıyla:
 
 1. **Kalıcı ve kilitli adres.** Şimdiki adres `http` ile başlıyor ve IP benzeri bir deneme adı. Apple, şifresiz `http` bağlantıyı genelde reddeder. Google de veri güvenliği formunda bunu sorar. Kalıcı alan adı alınmalı, kilit (`https`) açılmalı, telefon uygulamasındaki adres buna çevrilmelidir.
-2. **Paket adı hâlâ yer tutucu.** Hem Android hem iOS kimliği `com.yourcompany.eventweek` yazıyor. Bu, “şirketiniz.eventweek” anlamına gelen boş bir örnektir. İlk mağaza yüklemesinden sonra bu ad **bir daha değiştirilemez**. Yayınlamadan önce size ait gerçek bir ad seçilmelidir. Örnek biçim: `com.sirketadi.etkinlik`.
+2. **Paket adı `com.sapkavefilsunum.themicer`.** Android ve iOS aynı kimliği kullanır. İlk mağaza yüklemesinden sonra bu ad değiştirilemez. Eski deneme APK’sı farklı kimlikle kurulduğu için yeni dosya onun üzerine güncelleme gibi oturmaz; ayrıca kurulur.
 3. **Play için doğru dosya türü yok.** Şu anki üretim ayarı Android’de APK üretir. Play Store yeni uygulamalarda APK değil **AAB** ister. AAB, Google’ın telefona göre paketlediği derleme türüdür. Bu ayar değişmeden Play’e yüklenemez.
 4. **iPhone hesabı yok.** Apple Geliştirici Programı yıllık ücretlidir. Hesap açılmadan iPhone derlemesi, TestFlight ve App Store adımı başlamaz.
-5. **Bildirimler telefona gitmez.** Kodda duyuru bildirimi vardır ama Android’in zorunlu bildirim dosyası (`google-services.json`) projede yoktur. Kayıtlı cihaz anahtarı da oluşmamıştır. Panelden “bildirim gönder” dense bile telefon çalmaz.
+5. **Bildirim dosyası eklendi, anahtar henüz Expo’da değil.** Firebase projesi `sapkavefilsunum-themicer` ve `google-services.json` hazır. Android bildiriminin gitmesi için bu projenin servis anahtarının Expo’ya yüklenmesi ve telefonda yeni derlemenin kurulu olması gerekir. iPhone bildirimi, Apple bağlantısı yapılınca açılır.
 6. **Gizlilik sayfası yok.** İki mağaza da herkese açık bir gizlilik metni adresi ister. Telefon numarası, fotoğraf ve bildirim toplandığı için bu metin şarttır.
 7. **QR okutma tamamlanmış sayılmaz.** Profilde QR gösterme vardır. Kapıda okutunca “bu kişi bu oturuma geldi” kaydı tutan akış henüz gerçek bir yoklama değildir.
 8. **Profildeki “oturum” sayısı kişisel katılım değildir.** Etkinlikteki oturum adedini sayar. Kişinin tek tek hangi oturuma girip çıktığını tutmaz.
@@ -169,7 +169,7 @@ Doğrulama bitmeden uygulama herkese açılamaz. Eksik veya yanlış kimlik, kay
 
 ### 7.3 Paket adını kilitlemek
 
-İlk AAB yüklenmeden önce projedeki Android paket adı gerçek şirkete ait adla değiştirilir. Örnek: `com.yourcompany.eventweek` kalırsa mağazada da o görünür ve sonra düzeltilemez.
+Android paket adı `com.sapkavefilsunum.themicer` oldu. İlk AAB bu adla yüklenmeli. Yüklendikten sonra değiştirilemez.
 
 Bu değişiklikten sonra yeni bir production derlemesi gerekir. Eski deneme APK’si ile mağaza sürümü aynı paket adını taşıyorsa güncelleme gibi kurulur. Paket adı değişirse telefon bunu yeni bir uygulama sanır.
 
@@ -291,7 +291,7 @@ Uygulamayı bir yazılım firması sizin adınıza yapıyorsa Apple’ın kural�
 Apple buna Bundle ID der. Uygulamanın iPhone’daki kimliğidir.
 
 1. developer.apple.com içinde Identifiers bölümünde yeni bir Bundle ID açılır.
-2. Projedeki `com.yourcompany.eventweek` bununla değiştirilir.
+2. Projede Bundle ID `com.sapkavefilsunum.themicer` olarak duruyor. Apple hesabında da bu adla açılacak.
 3. Aynı ad Android’de de kullanılabilir. Şart değildir ama karışıklığı azaltır.
 4. Bildirim kullanılacaksa bu kimliğe Push Notifications yetkisi eklenir.
 
@@ -381,7 +381,7 @@ Sıra bozulmasın.
 
 1. Şirkete ait alan adını alın. Sunucuyu `https` ile açın.
 2. Telefon uygulamasındaki adresi bu yeni adrese çevirin. `http` serbestisini kapatın.
-3. Paket adını `com.yourcompany.eventweek` olmaktan çıkarıp size ait gerçek ad yapın. Bunu ilk mağaza yüklemesinden önce yapın.
+3. Paket adı `com.sapkavefilsunum.themicer`. İlk mağaza yüklemesinden sonra değiştirilmez.
 4. Gizlilik sayfasını yayınlayın. Adresi hem Play hem App Store formuna yazın.
 5. Kullanılmayan izinleri temizleyin. Bildirim kullanılacaksa Android için Firebase bildirim dosyasını ekleyin ve bir telefonda bildirimin geldiğini deneyin.
 6. Play Console hesabını açın. Production derlemeyi AAB yapın. İç teste yükleyin.

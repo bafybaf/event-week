@@ -9,6 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Signing secrets
+credentials.json
+
 # Native
 .kotlin/
 *.orig.*

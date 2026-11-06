@@ -22,13 +22,16 @@ export function FeedCarousel({ media, width, onOpen }: FeedCarouselProps) {
   if (!media.length) return null;
 
   return (
-    <View>
+    <View style={{ width, height }}>
       <FlatList
         data={media}
         horizontal
         pagingEnabled
         bounces={media.length > 1}
+        nestedScrollEnabled
+        removeClippedSubviews={false}
         showsHorizontalScrollIndicator={false}
+        style={{ width, height }}
         keyExtractor={(_, index) => String(index)}
         onMomentumScrollEnd={(event) => {
           const next = Math.round(event.nativeEvent.contentOffset.x / Math.max(width, 1));
@@ -85,6 +88,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 10,
+    zIndex: 5,
+    elevation: 6,
     alignItems: 'center',
   },
   count: {

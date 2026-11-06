@@ -51,6 +51,41 @@ export function mapUserFromApi(user?: any) {
   };
 }
 
+export async function resolveSessionEvent() {
+  const stored = await refreshSelectedEvent();
+  if (stored?.id && stored.id !== 'undefined') return stored;
+
+  const userRaw = await AsyncStorage.getItem('currentUser');
+  let user: any = null;
+  try {
+    user = userRaw ? JSON.parse(userRaw) : null;
+  } catch {
+    user = null;
+  }
+
+  const eventId = user?.eventId || user?.event?.id;
+  if (!eventId) return stored;
+
+  try {
+    const fresh = await apiService.getEvent(eventId);
+    const mapped = mapEventFromApi(fresh);
+    if (mapped?.id) {
+      await AsyncStorage.setItem('selectedEvent', JSON.stringify(mapped));
+      return mapped;
+    }
+  } catch {
+    // Giriş kaydındaki etkinlik bilgisi yedek olarak kullanılır.
+  }
+
+  const mapped = mapEventFromApi(user?.event);
+  if (mapped?.id) {
+    await AsyncStorage.setItem('selectedEvent', JSON.stringify(mapped));
+    return mapped;
+  }
+
+  return stored;
+}
+
 export async function refreshSelectedEvent() {
   const stored = await AsyncStorage.getItem('selectedEvent');
   if (!stored) return null;

@@ -2,8 +2,9 @@ import {  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicato
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiService from '../src/services/apiService';
+import notificationService from '../src/services/notificationService';
+import { resolveSessionEvent } from '../src/utils/eventStorage';
 import { router } from 'expo-router';
 import { useThemeColor } from '../hooks/use-theme-color';
 import { Header } from '../components/Header';
@@ -37,15 +38,16 @@ export default function AnnouncementsScreen() {
 
   const loadSelectedEvent = async () => {
     try {
-      const eventJson = await AsyncStorage.getItem('selectedEvent');
-      if (eventJson) {
-        const event = JSON.parse(eventJson);
+      const event = await resolveSessionEvent();
+      if (event?.id) {
         setSelectedEvent(event);
+        notificationService.registerPushToken().catch(() => {});
         return event;
       }
     } catch (error) {
       console.error('Error loading selected event:', error);
     }
+    setSelectedEvent(null);
     return null;
   };
 
@@ -262,6 +264,13 @@ export default function AnnouncementsScreen() {
         </View>
 
         <View style={styles.announcementsList}>
+          {filteredAnnouncements.length === 0 ? (
+            <Text style={[styles.announcementContent, { color: textSecondary, textAlign: 'center', marginTop: 24 }]}>
+              {selectedEvent?.name
+                ? `${selectedEvent.name} için duyuru yok.`
+                : 'Etkinlik bulunamadı. Çıkış yapıp telefon numaranızla tekrar girin.'}
+            </Text>
+          ) : null}
           {filteredAnnouncements.map((announcement) => (
             <TouchableOpacity 
               key={announcement.id} 

@@ -11,7 +11,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.eventweek",
+      "bundleIdentifier": "com.sapkavefilsunum.themicer",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
@@ -27,7 +27,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#071422"
       },
-      "package": "com.yourcompany.eventweek",
+      "package": "com.sapkavefilsunum.themicer",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1,
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -69,8 +70,9 @@
       [
         "expo-notifications",
         {
-          "color": "#1e40af",
+          "color": "#2BB6E8",
           "defaultChannel": "event-week",
+          "mode": "production",
           "enableBackgroundRemoteNotifications": true
         }
       ],
@@ -88,7 +90,7 @@
     },
     "extra": {
       "router": {},
-      "apiUrl": "http://xcnmst8cowlxzcnc24jgwofs.76.13.14.253.sslip.io/api",
+      "apiUrl": "https://themicer.sapkavefilsunum.com/api",
       "eas": {
         "projectId": "1569b470-2b00-4408-b31c-73172ece9800"
       }
