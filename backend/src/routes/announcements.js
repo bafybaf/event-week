@@ -472,7 +472,9 @@ router.post('/:id/notify', auth, async (req, res) => {
       eventName,
       message: notifyResult.okCount > 0
         ? `${eventName} etkinliğine bildirim ${notifyResult.okCount} telefona gönderildi`
-        : `${eventName} etkinliğinde bildirim alacak kayıtlı telefon yok. Katılımcı bu etkinlikle giriş yapıp bildirim iznini vermeli.`
+        : notifyResult.sentCount > 0
+          ? `${eventName} etkinliğinde ${notifyResult.sentCount} telefon kayıtlı ama bildirim iletilemedi.`
+          : `${eventName} etkinliğinde bildirim alacak kayıtlı telefon yok. Katılımcı bu etkinlikle giriş yapıp bildirim iznini vermeli.`
     });
   } catch (error) {
     console.error('Notify announcement error:', error);
