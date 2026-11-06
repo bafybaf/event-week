@@ -195,21 +195,12 @@ router.get('/stats', auth, adminAuth, async (req, res) => {
       }, {});
 
       // Speakers statistics using raw SQL
-      const [keynoteResult] = await sequelize.query(
-        `SELECT COUNT(*) as count 
-         FROM speakers 
-         WHERE event_id = :eventId AND is_keynote = 1`,
-        { replacements: { eventId: String(eventId) }, type: QueryTypes.SELECT }
-      );
-      const keynoteSpeakers = parseInt(keynoteResult?.count || '0') || 0;
-
-      const [availableResult] = await sequelize.query(
-        `SELECT COUNT(*) as count 
-         FROM speakers 
-         WHERE event_id = :eventId AND is_available = 1`,
-        { replacements: { eventId: String(eventId) }, type: QueryTypes.SELECT }
-      );
-      const availableSpeakers = parseInt(availableResult?.count || '0') || 0;
+      const keynoteSpeakers = await Speaker.count({
+        where: { eventId: String(eventId), isKeynote: true }
+      });
+      const availableSpeakers = await Speaker.count({
+        where: { eventId: String(eventId), isAvailable: true }
+      });
 
       // Voting statistics using raw SQL
       const [votingStatsResult] = await sequelize.query(
@@ -444,13 +435,7 @@ router.get('/stats', auth, adminAuth, async (req, res) => {
     }
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch statistics',
-      details: process.env.NODE_ENV === 'development' ? {
-        message: error.message,
-        name: error.name,
-        sql: error.parent?.sql,
-        sqlMessage: error.parent?.message
-      } : undefined
+      error: error.parent?.message || error.message || 'Failed to fetch statistics'
     });
   }
 });

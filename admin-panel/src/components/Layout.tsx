@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { fileUrl } from '../config.ts';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -158,7 +159,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 >
                   {user?.profileImage ? (
                     <img
-                      src={user.profileImage}
+                      src={fileUrl(user.profileImage)}
                       alt={`${user.firstName} ${user.lastName}`}
                       className="h-8 w-8 rounded-full object-cover border-2 border-gray-200"
                       onError={(e) => {

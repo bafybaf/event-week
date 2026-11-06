@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye, Image, Calendar, Filter, Search, Upload, ChevronDown, ChevronUp, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { galleryApi, eventsApi } from '../services/api.ts';
-import { API_ORIGIN } from '../config.ts';
+import { API_ORIGIN, fileUrl } from '../config.ts';
 
 interface GalleryItem {
   id: number;
@@ -621,7 +621,7 @@ const Gallery: React.FC = () => {
                             {fileType === 'video' ? (
                               <div className="relative w-full h-48 bg-black">
                                 <video
-                                  src={item.imageUrl}
+                                  src={fileUrl(item.imageUrl)}
                                   className="w-full h-full object-cover"
                                   controls={false}
                                   preload="metadata"
@@ -640,7 +640,7 @@ const Gallery: React.FC = () => {
                               <>
                                 {item.imageUrl ? (
                                   <img
-                                    src={item.imageUrl}
+                                    src={fileUrl(item.imageUrl)}
                                     alt={item.title}
                                     className="w-full h-48 object-cover cursor-pointer"
                                     onClick={() => openViewModal(item)}
@@ -705,7 +705,7 @@ const Gallery: React.FC = () => {
               <div className="aspect-w-16 aspect-h-9 bg-gray-200">
                 {item.imageUrl ? (
                   <img
-                    src={item.imageUrl}
+                    src={fileUrl(item.imageUrl)}
                     alt={item.title}
                     className="w-full h-48 object-cover"
                     onError={(e) => {
@@ -798,7 +798,7 @@ const Gallery: React.FC = () => {
                       <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
                         {item.imageUrl ? (
                           <img
-                            src={item.imageUrl}
+                            src={fileUrl(item.imageUrl)}
                             alt={item.title}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -951,7 +951,7 @@ const Gallery: React.FC = () => {
                 {newItem.imageUrl && (
                   <div className="mt-2">
                     <img
-                      src={newItem.imageUrl}
+                      src={fileUrl(newItem.imageUrl)}
                       alt="Preview"
                       className="w-32 h-32 object-cover rounded-lg border"
                       onError={(e) => {
@@ -1063,7 +1063,7 @@ const Gallery: React.FC = () => {
                   getFileType(selectedItem.imageUrl) === 'video' ? (
                     <div className="w-full rounded-lg overflow-hidden bg-black">
                       <video
-                        src={selectedItem.imageUrl}
+                        src={fileUrl(selectedItem.imageUrl)}
                         controls
                         className="w-full h-auto max-h-96"
                         preload="metadata"
@@ -1073,7 +1073,7 @@ const Gallery: React.FC = () => {
                     </div>
                   ) : (
                     <img
-                      src={selectedItem.imageUrl}
+                      src={fileUrl(selectedItem.imageUrl)}
                       alt={selectedItem.title}
                       className="w-full h-64 object-cover rounded-lg"
                       onError={(e) => {

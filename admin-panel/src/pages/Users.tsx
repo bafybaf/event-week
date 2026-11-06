@@ -15,7 +15,7 @@ import {
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { usersApi, eventsApi } from '../services/api.ts';
-import { API_ORIGIN } from '../config.ts';
+import { API_ORIGIN, fileUrl } from '../config.ts';
 
 interface User {
   id: string;
@@ -876,7 +876,7 @@ const Users: React.FC = () => {
                     <div className="flex items-center">
                       {user.profileImage ? (
                         <img
-                          src={user.profileImage}
+                          src={fileUrl(user.profileImage)}
                           alt={`${user.firstName} ${user.lastName}`}
                           className="h-10 w-10 rounded-full object-cover border-2 border-gray-200"
                           onError={(e) => {
@@ -1182,7 +1182,7 @@ const Users: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   {selectedUser.profileImage ? (
                     <img
-                      src={selectedUser.profileImage}
+                      src={fileUrl(selectedUser.profileImage)}
                       alt={`${selectedUser.firstName} ${selectedUser.lastName}`}
                       className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
                       onError={(e) => {
